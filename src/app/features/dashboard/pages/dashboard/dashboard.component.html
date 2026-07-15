@@ -19,22 +19,125 @@
     </button>
   </header>
 
-  <section class="welcome-card">
-    <div class="welcome-icon">
-      <mat-icon>verified_user</mat-icon>
-    </div>
+  @if (userProfileService.isLoading()) {
+    <section class="status-card loading-card">
+      <mat-spinner diameter="42" />
 
-    <div>
-      <p>Sesión iniciada correctamente</p>
+      <div>
+        <h2>Cargando perfil</h2>
 
-      <h2>
-        Bienvenido, {{ employeeNumber() }}
-      </h2>
+        <p>
+          Consultando la información del usuario.
+        </p>
+      </div>
+    </section>
+  } @else if (userProfileService.errorMessage()) {
+    <section class="status-card error-card">
+      <div class="status-icon">
+        <mat-icon>error_outline</mat-icon>
+      </div>
 
-      <span>
-        La autenticación y la protección de rutas
-        ya están funcionando.
-      </span>
-    </div>
-  </section>
+      <div>
+        <h2>No fue posible cargar el perfil</h2>
+
+        <p>
+          {{ userProfileService.errorMessage() }}
+        </p>
+
+        <button
+          mat-flat-button
+          type="button"
+          (click)="reloadProfile()"
+        >
+          <mat-icon>refresh</mat-icon>
+          Volver a intentar
+        </button>
+      </div>
+    </section>
+  } @else if (userProfileService.profile(); as profile) {
+    <section class="welcome-card">
+      <div class="avatar">
+        {{ userProfileService.initials() }}
+      </div>
+
+      <div class="welcome-content">
+        <p>Sesión iniciada correctamente</p>
+
+        <h2>
+          Bienvenido, {{ profile.employee.fullName }}
+        </h2>
+
+        <div class="profile-details">
+          <mat-chip>
+            <mat-icon matChipAvatar>
+              badge
+            </mat-icon>
+
+            {{ profile.employee.employeeNumber }}
+          </mat-chip>
+
+          <mat-chip>
+            <mat-icon matChipAvatar>
+              admin_panel_settings
+            </mat-icon>
+
+            {{ userProfileService.roleLabel() }}
+          </mat-chip>
+
+          <mat-chip>
+            <mat-icon matChipAvatar>
+              factory
+            </mat-icon>
+
+            {{ userProfileService.plantName() }}
+          </mat-chip>
+        </div>
+      </div>
+    </section>
+
+    <section class="verification-grid">
+      <article class="verification-card">
+        <div class="verification-icon success">
+          <mat-icon>verified_user</mat-icon>
+        </div>
+
+        <div>
+          <span>Autenticación</span>
+          <strong>Funcionando</strong>
+          <p>
+            La sesión de Supabase está activa.
+          </p>
+        </div>
+      </article>
+
+      <article class="verification-card">
+        <div class="verification-icon success">
+          <mat-icon>policy</mat-icon>
+        </div>
+
+        <div>
+          <span>Seguridad RLS</span>
+          <strong>Funcionando</strong>
+          <p>
+            El usuario pudo consultar únicamente
+            su perfil autorizado.
+          </p>
+        </div>
+      </article>
+
+      <article class="verification-card">
+        <div class="verification-icon success">
+          <mat-icon>database</mat-icon>
+        </div>
+
+        <div>
+          <span>Base de datos</span>
+          <strong>Conectada</strong>
+          <p>
+            Angular obtuvo los datos desde PostgreSQL.
+          </p>
+        </div>
+      </article>
+    </section>
+  }
 </main>
