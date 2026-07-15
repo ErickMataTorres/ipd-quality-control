@@ -1,0 +1,40 @@
+<main class="dashboard-page">
+  <header class="topbar">
+    <div>
+      <span class="eyebrow">
+        CON-TEC
+      </span>
+
+      <h1>Control de calidad IPD</h1>
+    </div>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="isSigningOut()"
+      (click)="signOut()"
+    >
+      <mat-icon>logout</mat-icon>
+      Cerrar sesión
+    </button>
+  </header>
+
+  <section class="welcome-card">
+    <div class="welcome-icon">
+      <mat-icon>verified_user</mat-icon>
+    </div>
+
+    <div>
+      <p>Sesión iniciada correctamente</p>
+
+      <h2>
+        Bienvenido, {{ employeeNumber() }}
+      </h2>
+
+      <span>
+        La autenticación y la protección de rutas
+        ya están funcionando.
+      </span>
+    </div>
+  </section>
+</main>

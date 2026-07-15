@@ -1,0 +1,176 @@
+<main class="login-page">
+  <section class="brand-panel">
+    <div class="brand-content">
+      <div class="brand-logo-container">
+        <img
+          class="brand-logo"
+          src="/images/contec-logo.png"
+          alt="CON-TEC"
+        />
+      </div>
+
+      <p class="brand-eyebrow">
+        Sistema de control de calidad
+      </p>
+
+      <h1>
+        Monitoreo de IPD
+      </h1>
+
+      <p class="brand-description">
+        Registro, seguimiento y análisis de defectos
+        en la producción de arneses automotrices.
+      </p>
+
+      <div class="formula-card">
+        <span>IPD</span>
+
+        <strong>
+          Defectos ÷ Arneses producidos × 100
+        </strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-panel">
+    <mat-card
+      class="login-card"
+      appearance="outlined"
+    >
+      <mat-card-header>
+        <mat-card-title>
+          Iniciar sesión
+        </mat-card-title>
+
+        <mat-card-subtitle>
+          Ingresa tu número de reloj y contraseña
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form
+          class="login-form"
+          [formGroup]="loginForm"
+          (ngSubmit)="submit()"
+        >
+          <mat-form-field appearance="outline">
+            <mat-label>Número de reloj</mat-label>
+
+            <mat-icon matPrefix>
+              badge
+            </mat-icon>
+
+            <input
+              matInput
+              type="text"
+              inputmode="numeric"
+              autocomplete="username"
+              formControlName="employeeNumber"
+              placeholder="Ejemplo: 248446"
+            />
+
+            @if (
+              loginForm.controls.employeeNumber.hasError(
+                'required'
+              )
+              && loginForm.controls.employeeNumber.touched
+            ) {
+              <mat-error>
+                El número de reloj es obligatorio.
+              </mat-error>
+            }
+
+            @if (
+              loginForm.controls.employeeNumber.hasError(
+                'pattern'
+              )
+              && loginForm.controls.employeeNumber.touched
+            ) {
+              <mat-error>
+                Ingresa únicamente números.
+              </mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña</mat-label>
+
+            <mat-icon matPrefix>
+              lock
+            </mat-icon>
+
+            <input
+              matInput
+              [type]="hidePassword() ? 'password' : 'text'"
+              autocomplete="current-password"
+              formControlName="password"
+            />
+
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              aria-label="Mostrar u ocultar contraseña"
+              (click)="togglePasswordVisibility()"
+            >
+              <mat-icon>
+                {{
+                  hidePassword()
+                    ? 'visibility'
+                    : 'visibility_off'
+                }}
+              </mat-icon>
+            </button>
+
+            @if (
+              loginForm.controls.password.hasError(
+                'required'
+              )
+              && loginForm.controls.password.touched
+            ) {
+              <mat-error>
+                La contraseña es obligatoria.
+              </mat-error>
+            }
+          </mat-form-field>
+
+          @if (errorMessage()) {
+            <div
+              class="login-error"
+              role="alert"
+            >
+              <mat-icon>error_outline</mat-icon>
+
+              <span>
+                {{ errorMessage() }}
+              </span>
+            </div>
+          }
+
+          <button
+            mat-flat-button
+            class="login-button"
+            type="submit"
+            [disabled]="
+              loginForm.invalid || isSubmitting()
+            "
+          >
+            @if (isSubmitting()) {
+              <mat-spinner diameter="20" />
+
+              <span>Ingresando...</span>
+            } @else {
+              <mat-icon>login</mat-icon>
+
+              <span>Iniciar sesión</span>
+            }
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <p class="footer-text">
+      CON-TEC · Control de calidad IPD
+    </p>
+  </section>
+</main>

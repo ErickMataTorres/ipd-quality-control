@@ -1,0 +1,85 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: #f6f7fb;
+}
+
+.dashboard-page {
+  width: min(100% - 2rem, 1400px);
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  h1 {
+    margin: 0.2rem 0 0;
+    color: #191923;
+  }
+}
+
+.eyebrow {
+  color: #55449a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.welcome-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem;
+  border: 1px solid #e3e3eb;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgb(38 27 78 / 8%);
+
+  p {
+    margin: 0 0 0.35rem;
+    color: #686878;
+  }
+
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.7rem;
+  }
+
+  span {
+    color: #686878;
+  }
+}
+
+.welcome-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 18px;
+  color: #ffffff;
+  background: #2f1e65;
+
+  mat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 650px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .welcome-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
