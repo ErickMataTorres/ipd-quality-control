@@ -5,15 +5,16 @@ import {
 } from '@supabase/supabase-js';
 
 import { environment } from '../../../environments/environment';
+import { Database } from '../types/database.types';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SupabaseService {
-  readonly client: SupabaseClient;
+  readonly client: SupabaseClient<Database>;
 
   constructor() {
-    this.client = createClient(
+    this.client = createClient<Database>(
       environment.supabaseUrl,
       environment.supabasePublishableKey,
       {
