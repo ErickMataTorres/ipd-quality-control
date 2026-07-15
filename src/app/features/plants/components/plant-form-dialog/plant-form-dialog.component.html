@@ -1,0 +1,155 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar planta'
+      : 'Agregar planta'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="plant-form"
+    class="plant-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Código</mat-label>
+
+        <mat-icon matPrefix>
+          tag
+        </mat-icon>
+
+        <input
+          matInput
+          formControlName="code"
+          placeholder="Ejemplo: MCH2"
+          autocomplete="off"
+        />
+
+        <mat-hint>
+          Letras, números, guion o guion bajo.
+        </mat-hint>
+
+        @if (
+          form.controls.code.hasError('required')
+          && form.controls.code.touched
+        ) {
+          <mat-error>
+            El código es obligatorio.
+          </mat-error>
+        }
+
+        @if (
+          form.controls.code.hasError('pattern')
+          && form.controls.code.touched
+        ) {
+          <mat-error>
+            El código contiene caracteres no permitidos.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+
+        <mat-icon matPrefix>
+          factory
+        </mat-icon>
+
+        <input
+          matInput
+          formControlName="name"
+          placeholder="Ejemplo: MCH2"
+          autocomplete="off"
+        />
+
+        @if (
+          form.controls.name.hasError('required')
+          && form.controls.name.touched
+        ) {
+          <mat-error>
+            El nombre es obligatorio.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Zona horaria</mat-label>
+
+      <mat-icon matPrefix>
+        public
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="timezone"
+        placeholder="America/Mazatlan"
+        autocomplete="off"
+      />
+
+      <mat-hint>
+        Se utilizará para fechas y registros locales.
+      </mat-hint>
+
+      @if (
+        form.controls.timezone.hasError('required')
+        && form.controls.timezone.touched
+      ) {
+        <mat-error>
+          La zona horaria es obligatoria.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción</mat-label>
+
+      <textarea
+        matInput
+        formControlName="description"
+        rows="4"
+        placeholder="Descripción opcional de la planta"
+      ></textarea>
+
+      <mat-hint align="end">
+        {{
+          form.controls.description.value.length
+        }}/500
+      </mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="plant-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Agregar planta'
+    }}
+  </button>
+</mat-dialog-actions>

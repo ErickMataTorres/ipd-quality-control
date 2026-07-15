@@ -176,19 +176,22 @@ export const routes: Routes = [
         },
         loadComponent: loadPlaceholder,
       },
-      {
-        path: 'plants',
-        title: 'Plantas · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: administratorRoles,
-          pageTitle: 'Plantas',
-          icon: 'factory',
-          description:
-            'Administración de las plantas disponibles en el sistema.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'plants',
+  title: 'Plantas · IPD Quality',
+  canActivate: [roleGuard],
+  data: {
+    roles: administratorRoles,
+    pageTitle: 'Plantas',
+  },
+  loadComponent: () =>
+    import(
+      './features/plants/pages/plants-list/plants-list.component'
+    ).then(
+      component =>
+        component.PlantsListComponent,
+    ),
+},
       {
         path: 'production-lines',
         title: 'Líneas · IPD Quality',

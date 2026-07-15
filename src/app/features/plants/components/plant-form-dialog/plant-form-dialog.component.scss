@@ -1,0 +1,39 @@
+:host {
+  display: block;
+}
+
+.plant-form {
+  width: min(100%, 620px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(160px, 0.65fr)
+    minmax(240px, 1.35fr);
+  gap: 1rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-dialog-content {
+  width: min(680px, calc(100vw - 32px));
+  max-height: 70dvh;
+}
+
+mat-dialog-actions {
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+@media (max-width: 620px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
