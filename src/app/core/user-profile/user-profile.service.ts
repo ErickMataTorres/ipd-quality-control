@@ -9,10 +9,10 @@ import { AuthService } from '../auth/auth.service';
 import { SupabaseService } from '../services/supabase';
 import { Database } from '../types/database.types';
 
-type AppRole =
+export type AppRole =
   Database['public']['Enums']['app_role'];
 
-type ThemePreference =
+export type ThemePreference =
   Database['public']['Enums']['theme_preference'];
 
 interface EmployeeSummary {
@@ -231,6 +231,36 @@ export class UserProfileService {
       this.isLoading.set(false);
     }
   }
+
+async updatePreferences(
+  preferredTheme: ThemePreference,
+): Promise<void> {
+  const currentProfile = this.profile();
+
+  if (!currentProfile) {
+    throw new Error(
+      'The current user profile is not loaded.',
+    );
+  }
+
+  const { error } = await this.supabase.client.rpc(
+    'update_my_preferences',
+    {
+      preferred_theme_value: preferredTheme,
+      default_plant_value:
+        currentProfile.defaultPlantId ?? undefined,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  this.profile.set({
+    ...currentProfile,
+    preferredTheme,
+  });
+}
 
   clear(): void {
     this.profile.set(null);

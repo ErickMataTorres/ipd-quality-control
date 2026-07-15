@@ -1,143 +1,102 @@
-<main class="dashboard-page">
-  <header class="topbar">
-    <div>
-      <span class="eyebrow">
-        CON-TEC
-      </span>
+<section class="welcome-banner">
+  <div>
+    <span>Resumen general</span>
 
-      <h1>Control de calidad IPD</h1>
+    <h2>
+      Bienvenido,
+      {{ userProfileService.fullName() }}
+    </h2>
+
+    <p>
+      Consulta el estado actual de producción,
+      defectos y cumplimiento del IPD.
+    </p>
+  </div>
+
+  <div class="welcome-icon">
+    <mat-icon>analytics</mat-icon>
+  </div>
+</section>
+
+<section class="kpi-grid">
+  <article class="kpi-card">
+    <div class="kpi-icon primary">
+      <mat-icon>percent</mat-icon>
     </div>
 
-    <button
-      mat-stroked-button
-      type="button"
-      [disabled]="isSigningOut()"
-      (click)="signOut()"
-    >
-      <mat-icon>logout</mat-icon>
-      Cerrar sesión
-    </button>
-  </header>
+    <span>IPD del día</span>
+    <strong>--</strong>
+    <small>Sin registros todavía</small>
+  </article>
 
-  @if (userProfileService.isLoading()) {
-    <section class="status-card loading-card">
-      <mat-spinner diameter="42" />
+  <article class="kpi-card">
+    <div class="kpi-icon success">
+      <mat-icon>precision_manufacturing</mat-icon>
+    </div>
 
+    <span>Arneses producidos</span>
+    <strong>--</strong>
+    <small>Producción total del día</small>
+  </article>
+
+  <article class="kpi-card">
+    <div class="kpi-icon warning">
+      <mat-icon>report_problem</mat-icon>
+    </div>
+
+    <span>Total de defectos</span>
+    <strong>--</strong>
+    <small>Defectos registrados hoy</small>
+  </article>
+
+  <article class="kpi-card">
+    <div class="kpi-icon info">
+      <mat-icon>pending_actions</mat-icon>
+    </div>
+
+    <span>Líneas pendientes</span>
+    <strong>--</strong>
+    <small>Capturas pendientes del día</small>
+  </article>
+</section>
+
+<section class="dashboard-grid">
+  <article class="dashboard-card large-card">
+    <header>
       <div>
-        <h2>Cargando perfil</h2>
-
-        <p>
-          Consultando la información del usuario.
-        </p>
-      </div>
-    </section>
-  } @else if (userProfileService.errorMessage()) {
-    <section class="status-card error-card">
-      <div class="status-icon">
-        <mat-icon>error_outline</mat-icon>
+        <span>Tendencia</span>
+        <h3>IPD diario</h3>
       </div>
 
+      <mat-icon>show_chart</mat-icon>
+    </header>
+
+    <div class="empty-state">
+      <mat-icon>query_stats</mat-icon>
+
+      <p>
+        La gráfica aparecerá cuando existan
+        registros diarios.
+      </p>
+    </div>
+  </article>
+
+  <article class="dashboard-card">
+    <header>
       <div>
-        <h2>No fue posible cargar el perfil</h2>
-
-        <p>
-          {{ userProfileService.errorMessage() }}
-        </p>
-
-        <button
-          mat-flat-button
-          type="button"
-          (click)="reloadProfile()"
-        >
-          <mat-icon>refresh</mat-icon>
-          Volver a intentar
-        </button>
-      </div>
-    </section>
-  } @else if (userProfileService.profile(); as profile) {
-    <section class="welcome-card">
-      <div class="avatar">
-        {{ userProfileService.initials() }}
+        <span>Seguimiento</span>
+        <h3>Estado de líneas</h3>
       </div>
 
-      <div class="welcome-content">
-        <p>Sesión iniciada correctamente</p>
+      <mat-icon>fact_check</mat-icon>
+    </header>
 
-        <h2>
-          Bienvenido, {{ profile.employee.fullName }}
-        </h2>
+    <div class="empty-state">
+      <mat-icon>storage</mat-icon>
 
-        <div class="profile-details">
-          <mat-chip>
-            <mat-icon matChipAvatar>
-              badge
-            </mat-icon>
-
-            {{ profile.employee.employeeNumber }}
-          </mat-chip>
-
-          <mat-chip>
-            <mat-icon matChipAvatar>
-              admin_panel_settings
-            </mat-icon>
-
-            {{ userProfileService.roleLabel() }}
-          </mat-chip>
-
-          <mat-chip>
-            <mat-icon matChipAvatar>
-              factory
-            </mat-icon>
-
-            {{ userProfileService.plantName() }}
-          </mat-chip>
-        </div>
-      </div>
-    </section>
-
-    <section class="verification-grid">
-      <article class="verification-card">
-        <div class="verification-icon success">
-          <mat-icon>verified_user</mat-icon>
-        </div>
-
-        <div>
-          <span>Autenticación</span>
-          <strong>Funcionando</strong>
-          <p>
-            La sesión de Supabase está activa.
-          </p>
-        </div>
-      </article>
-
-      <article class="verification-card">
-        <div class="verification-icon success">
-          <mat-icon>policy</mat-icon>
-        </div>
-
-        <div>
-          <span>Seguridad RLS</span>
-          <strong>Funcionando</strong>
-          <p>
-            El usuario pudo consultar únicamente
-            su perfil autorizado.
-          </p>
-        </div>
-      </article>
-
-      <article class="verification-card">
-        <div class="verification-icon success">
-          <mat-icon>database</mat-icon>
-        </div>
-
-        <div>
-          <span>Base de datos</span>
-          <strong>Conectada</strong>
-          <p>
-            Angular obtuvo los datos desde PostgreSQL.
-          </p>
-        </div>
-      </article>
-    </section>
-  }
-</main>
+      <p>
+        Todavía no existen líneas configuradas.
+      </p>
+    </div>
+  </article>
+</section>

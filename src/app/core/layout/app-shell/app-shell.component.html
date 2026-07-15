@@ -1,0 +1,239 @@
+@if (userProfileService.profile(); as profile) {
+  <mat-sidenav-container class="app-shell">
+    <mat-sidenav
+      class="sidebar"
+      [mode]="isMobile() ? 'over' : 'side'"
+      [opened]="sidebarOpened()"
+      (openedChange)="sidebarOpened.set($event)"
+    >
+      <header class="sidebar-brand">
+        <div class="brand-logo">
+          <img
+            src="/images/contec-logo.png"
+            alt="CON-TEC"
+          />
+        </div>
+
+        <div>
+          <strong>IPD Quality</strong>
+          <span>Control de calidad</span>
+        </div>
+      </header>
+
+      <mat-divider />
+
+      <mat-nav-list>
+        @for (
+          group of visibleNavigationGroups();
+          track group.label
+        ) {
+          <div class="navigation-group">
+            <span class="navigation-label">
+              {{ group.label }}
+            </span>
+
+            @for (
+              item of group.items;
+              track item.route
+            ) {
+              <a
+                mat-list-item
+                [routerLink]="item.route"
+                routerLinkActive="active-link"
+                (click)="closeSidebarOnMobile()"
+              >
+                <mat-icon matListItemIcon>
+                  {{ item.icon }}
+                </mat-icon>
+
+                <span matListItemTitle>
+                  {{ item.label }}
+                </span>
+              </a>
+            }
+          </div>
+        }
+      </mat-nav-list>
+
+      <footer class="sidebar-footer">
+        <span>Planta activa</span>
+
+        <strong>
+          {{ userProfileService.plantName() }}
+        </strong>
+      </footer>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <mat-toolbar class="topbar">
+        <button
+          mat-icon-button
+          type="button"
+          aria-label="Abrir o cerrar menú"
+          (click)="toggleSidebar()"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+
+        <div class="page-heading">
+          <span>
+            {{ userProfileService.plantName() }}
+          </span>
+
+          <h1>{{ pageTitle() }}</h1>
+        </div>
+
+        <span class="topbar-spacer"></span>
+
+        <button
+          mat-icon-button
+          type="button"
+          [matMenuTriggerFor]="themeMenu"
+          [matTooltip]="themeLabel()"
+          aria-label="Cambiar tema"
+        >
+          <mat-icon>
+            {{
+              themeService.resolvedTheme()
+                === 'dark'
+                ? 'dark_mode'
+                : 'light_mode'
+            }}
+          </mat-icon>
+        </button>
+
+        <button
+          mat-button
+          class="user-button"
+          type="button"
+          [matMenuTriggerFor]="userMenu"
+        >
+          <span class="user-avatar">
+            {{ userProfileService.initials() }}
+          </span>
+
+          <span class="user-summary">
+            <strong>
+              {{ profile.employee.fullName }}
+            </strong>
+
+            <small>
+              {{ userProfileService.roleLabel() }}
+            </small>
+          </span>
+
+          <mat-icon>expand_more</mat-icon>
+        </button>
+      </mat-toolbar>
+
+      <main class="page-content">
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+
+  <mat-menu #themeMenu="matMenu">
+    <button
+      mat-menu-item
+      type="button"
+      (click)="changeTheme('system')"
+    >
+      <mat-icon>
+        {{
+          themeService.preference()
+            === 'system'
+            ? 'check'
+            : 'devices'
+        }}
+      </mat-icon>
+
+      <span>Usar tema del sistema</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="changeTheme('light')"
+    >
+      <mat-icon>
+        {{
+          themeService.preference()
+            === 'light'
+            ? 'check'
+            : 'light_mode'
+        }}
+      </mat-icon>
+
+      <span>Tema claro</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="changeTheme('dark')"
+    >
+      <mat-icon>
+        {{
+          themeService.preference()
+            === 'dark'
+            ? 'check'
+            : 'dark_mode'
+        }}
+      </mat-icon>
+
+      <span>Tema oscuro</span>
+    </button>
+  </mat-menu>
+
+  <mat-menu #userMenu="matMenu">
+    <div
+      class="user-menu-header"
+      (click)="$event.stopPropagation()"
+    >
+      <strong>
+        {{ profile.employee.fullName }}
+      </strong>
+
+      <span>
+        No. {{ profile.employee.employeeNumber }}
+      </span>
+
+      <small>
+        {{ userProfileService.roleLabel() }}
+      </small>
+    </div>
+
+    <mat-divider />
+
+    <button
+      mat-menu-item
+      type="button"
+      [disabled]="isSigningOut()"
+      (click)="signOut()"
+    >
+      <mat-icon>logout</mat-icon>
+      <span>Cerrar sesión</span>
+    </button>
+  </mat-menu>
+} @else if (userProfileService.isLoading()) {
+  <div class="shell-loading">
+    <mat-spinner diameter="44" />
+    <span>Cargando aplicación...</span>
+  </div>
+} @else {
+  <div class="shell-loading">
+    <mat-icon>error_outline</mat-icon>
+
+    <span>
+      No fue posible cargar el perfil.
+    </span>
+
+    <button
+      mat-flat-button
+      type="button"
+      (click)="signOut()"
+    >
+      Regresar al inicio de sesión
+    </button>
+  </div>
+}
