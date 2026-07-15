@@ -1,0 +1,129 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar modelo'
+      : 'Agregar modelo'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="product-model-form"
+    class="model-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre del modelo</mat-label>
+
+      <mat-icon matPrefix>
+        directions_car
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="name"
+        placeholder="Ejemplo: Modelo 2027"
+        autocomplete="off"
+      />
+
+      @if (
+        form.controls.name.hasError('required')
+        && form.controls.name.touched
+      ) {
+        <mat-error>
+          El nombre del modelo es obligatorio.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Año del modelo</mat-label>
+
+      <mat-icon matPrefix>
+        calendar_month
+      </mat-icon>
+
+      <input
+        matInput
+        type="text"
+        inputmode="numeric"
+        maxlength="4"
+        formControlName="modelYear"
+        placeholder="Ejemplo: 2027"
+        autocomplete="off"
+      />
+
+      <mat-hint>
+        Campo opcional.
+      </mat-hint>
+
+      @if (
+        form.controls.modelYear.hasError('pattern')
+        && form.controls.modelYear.touched
+      ) {
+        <mat-error>
+          Ingresa un año de cuatro dígitos.
+        </mat-error>
+      }
+
+      @if (
+        form.controls.modelYear.hasError(
+          'invalidYear'
+        )
+      ) {
+        <mat-error>
+          El año debe estar entre 1980 y 2200.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción</mat-label>
+
+      <textarea
+        matInput
+        formControlName="description"
+        rows="4"
+        placeholder="Descripción opcional del modelo"
+      ></textarea>
+
+      <mat-hint align="end">
+        {{
+          form.controls.description.value.length
+        }}/500
+      </mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="product-model-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Agregar modelo'
+    }}
+  </button>
+</mat-dialog-actions>

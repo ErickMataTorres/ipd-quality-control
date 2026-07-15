@@ -205,19 +205,22 @@ export const routes: Routes = [
         },
         loadComponent: loadPlaceholder,
       },
-      {
-        path: 'product-models',
-        title: 'Modelos · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: managementRoles,
-          pageTitle: 'Modelos',
-          icon: 'directions_car',
-          description:
-            'Administración de clientes, modelos y años de modelo.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'product-models',
+  title: 'Modelos · IPD Quality',
+  canActivate: [roleGuard],
+  data: {
+    roles: managementRoles,
+    pageTitle: 'Modelos',
+  },
+  loadComponent: () =>
+    import(
+      './features/product-models/pages/product-models-list/product-models-list.component'
+    ).then(
+      component =>
+        component.ProductModelsListComponent,
+    ),
+},
       {
         path: 'shifts',
         title: 'Turnos · IPD Quality',

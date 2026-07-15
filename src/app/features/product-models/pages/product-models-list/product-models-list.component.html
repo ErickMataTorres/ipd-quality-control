@@ -1,0 +1,297 @@
+<section class="page-header">
+  <div>
+    <span>Catálogo de producción</span>
+
+    <h2>Modelos</h2>
+
+    <p>
+      Administra los modelos que posteriormente
+      podrán relacionarse con las líneas de producción.
+    </p>
+  </div>
+
+  @if (canManage()) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="isSaving()"
+      (click)="openCreateDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      Agregar modelo
+    </button>
+  }
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>directions_car</mat-icon>
+    </div>
+
+    <div>
+      <span>Total</span>
+      <strong>{{ totalModels() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>check_circle</mat-icon>
+    </div>
+
+    <div>
+      <span>Activos</span>
+      <strong>{{ activeModels() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon muted">
+      <mat-icon>pause_circle</mat-icon>
+    </div>
+
+    <div>
+      <span>Inactivos</span>
+      <strong>{{ inactiveModels() }}</strong>
+    </div>
+  </article>
+</section>
+
+<section class="table-card">
+  <header class="table-toolbar">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Buscar modelo</mat-label>
+
+      <mat-icon matPrefix>
+        search
+      </mat-icon>
+
+      <input
+        matInput
+        [value]="searchTerm()"
+        placeholder="Nombre, año o descripción"
+        (input)="updateSearch($event)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Limpiar búsqueda"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar listado"
+      [disabled]="productModelsService.isLoading()"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (productModelsService.isLoading()) {
+    <div class="state-container">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Cargando modelos...</span>
+    </div>
+  } @else if (
+    productModelsService.errorMessage()
+  ) {
+    <div class="state-container">
+      <mat-icon>error_outline</mat-icon>
+
+      <h3>No fue posible cargar los modelos</h3>
+
+      <p>
+        {{ productModelsService.errorMessage() }}
+      </p>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="reload()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Volver a intentar
+      </button>
+    </div>
+  } @else if (filteredModels().length === 0) {
+    <div class="state-container">
+      <mat-icon>directions_car</mat-icon>
+
+      <h3>
+        {{
+          searchTerm()
+            ? 'No se encontraron resultados'
+            : 'No existen modelos registrados'
+        }}
+      </h3>
+
+      <p>
+        {{
+          searchTerm()
+            ? 'Prueba utilizando otro término de búsqueda.'
+            : 'Agrega el primer modelo para comenzar.'
+        }}
+      </p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table
+        mat-table
+        [dataSource]="filteredModels()"
+      >
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>
+            Modelo
+          </th>
+
+          <td mat-cell *matCellDef="let model">
+            <div class="model-name">
+              <strong>{{ model.name }}</strong>
+
+              @if (model.description) {
+                <span>
+                  {{ model.description }}
+                </span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="modelYear">
+          <th mat-header-cell *matHeaderCellDef>
+            Año
+          </th>
+
+          <td mat-cell *matCellDef="let model">
+            <span class="year-badge">
+              {{ model.model_year ?? 'Sin año' }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            Estado
+          </th>
+
+          <td mat-cell *matCellDef="let model">
+            <mat-chip
+              [class.active-chip]="model.active"
+              [class.inactive-chip]="!model.active"
+            >
+              {{
+                model.active
+                  ? 'Activo'
+                  : 'Inactivo'
+              }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="updatedAt">
+          <th mat-header-cell *matHeaderCellDef>
+            Última actualización
+          </th>
+
+          <td mat-cell *matCellDef="let model">
+            {{
+              model.updated_at
+                | date:'dd/MM/yyyy HH:mm'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let model"
+            class="actions-cell"
+          >
+            @if (canManage()) {
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="actionsMenu"
+                [matMenuTriggerData]="{
+                  model: model
+                }"
+                aria-label="Acciones del modelo"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns"
+        ></tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          "
+          [class.inactive-row]="!row.active"
+        ></tr>
+      </table>
+    </div>
+  }
+</section>
+
+<mat-menu #actionsMenu="matMenu">
+  <ng-template
+    matMenuContent
+    let-model="model"
+  >
+    <button
+      mat-menu-item
+      type="button"
+      (click)="openEditDialog(model)"
+    >
+      <mat-icon>edit</mat-icon>
+      <span>Modificar</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="toggleModelStatus(model)"
+    >
+      <mat-icon>
+        {{
+          model.active
+            ? 'pause_circle'
+            : 'play_circle'
+        }}
+      </mat-icon>
+
+      <span>
+        {{
+          model.active
+            ? 'Desactivar'
+            : 'Activar'
+        }}
+      </span>
+    </button>
+  </ng-template>
+</mat-menu>
