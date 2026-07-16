@@ -1137,6 +1137,39 @@ export type Database = {
         }
         Returns: string
       }
+      search_employees: {
+        Args: {
+          active_value?: boolean
+          page_number_value?: number
+          page_size_value?: number
+          plant_id_value?: string
+          search_value?: string
+          shift_id_value?: string
+        }
+        Returns: {
+          active: boolean
+          department_code: string
+          department_name: string
+          employee_number: string
+          full_name: string
+          id: string
+          job_position: string
+          photo_path: string
+          plant_code: string
+          plant_id: string
+          plant_name: string
+          production_line_id: string
+          production_line_name: string
+          service_date: string
+          shift_code: string
+          shift_id: string
+          shift_name: string
+          source_line_code: string
+          source_location_code: string
+          source_shift_code: string
+          total_count: number
+        }[]
+      }
       update_my_preferences: {
         Args: {
           default_plant_value?: string
