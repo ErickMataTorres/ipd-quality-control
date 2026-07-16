@@ -224,19 +224,22 @@ export const routes: Routes = [
         component.ProductModelsListComponent,
     ),
 },
-      {
-        path: 'shifts',
-        title: 'Turnos · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: administratorRoles,
-          pageTitle: 'Turnos',
-          icon: 'schedule',
-          description:
-            'Administración de los turnos utilizados en el registro de producción.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'shifts',
+  title: 'Turnos · IPD Quality',
+  canActivate: [roleGuard],
+  data: {
+    roles: administratorRoles,
+    pageTitle: 'Turnos',
+  },
+  loadComponent: () =>
+    import(
+      './features/shifts/pages/shifts-list/shifts-list.component'
+    ).then(
+      component =>
+        component.ShiftsListComponent,
+    ),
+},
       {
         path: 'defect-types',
         title:

@@ -1,0 +1,185 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar turno'
+      : 'Agregar turno'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="shift-form"
+    class="shift-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Código</mat-label>
+
+        <mat-icon matPrefix>
+          tag
+        </mat-icon>
+
+        <input
+          matInput
+          formControlName="code"
+          placeholder="Ejemplo: TC"
+          autocomplete="off"
+        />
+
+        <mat-hint>
+          Letras, números, guion o guion bajo.
+        </mat-hint>
+
+        @if (
+          form.controls.code.hasError('required')
+          && form.controls.code.touched
+        ) {
+          <mat-error>
+            El código es obligatorio.
+          </mat-error>
+        }
+
+        @if (
+          form.controls.code.hasError('pattern')
+          && form.controls.code.touched
+        ) {
+          <mat-error>
+            El código contiene caracteres no permitidos.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>
+          Orden de visualización
+        </mat-label>
+
+        <mat-icon matPrefix>
+          sort
+        </mat-icon>
+
+        <input
+          matInput
+          type="number"
+          min="0"
+          max="9999"
+          formControlName="displayOrder"
+        />
+
+        @if (
+          form.controls.displayOrder.invalid
+          && form.controls.displayOrder.touched
+        ) {
+          <mat-error>
+            Ingresa un orden válido.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre del turno</mat-label>
+
+      <mat-icon matPrefix>
+        schedule
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="name"
+        placeholder="Ejemplo: Turno C"
+        autocomplete="off"
+      />
+
+      @if (
+        form.controls.name.hasError('required')
+        && form.controls.name.touched
+      ) {
+        <mat-error>
+          El nombre del turno es obligatorio.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Hora de inicio</mat-label>
+
+        <mat-icon matPrefix>
+          login
+        </mat-icon>
+
+        <input
+          matInput
+          type="time"
+          formControlName="startTime"
+        />
+
+        <mat-hint>
+          Campo opcional.
+        </mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hora de finalización</mat-label>
+
+        <mat-icon matPrefix>
+          logout
+        </mat-icon>
+
+        <input
+          matInput
+          type="time"
+          formControlName="endTime"
+        />
+
+        <mat-hint>
+          Puede corresponder al día siguiente.
+        </mat-hint>
+      </mat-form-field>
+    </div>
+
+    <div class="information-note">
+      <mat-icon>info</mat-icon>
+
+      <span>
+        Los horarios son informativos. Un turno
+        nocturno puede iniciar, por ejemplo, a las
+        19:00 y terminar a las 07:00 del día siguiente.
+      </span>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="shift-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Agregar turno'
+    }}
+  </button>
+</mat-dialog-actions>
