@@ -513,6 +513,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employees_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
             foreignKeyName: "employees_production_line_id_fkey"
             columns: ["production_line_id"]
             isOneToOne: false
@@ -532,6 +539,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "production_lines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["production_line_id"]
           },
           {
             foreignKeyName: "employees_shift_id_fkey"
@@ -684,6 +698,13 @@ export type Database = {
             referencedRelation: "production_lines"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "line_model_assignments_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["production_line_id"]
+          },
         ]
       }
       plants: {
@@ -806,6 +827,13 @@ export type Database = {
             referencedRelation: "plants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "production_lines_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
+          },
         ]
       }
       shifts: {
@@ -895,6 +923,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "plants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
           },
         ]
       }
@@ -1018,6 +1053,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_plant_access_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
             foreignKeyName: "user_plant_access_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -1071,6 +1113,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "plants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_profiles_default_plant_id_fkey"
+            columns: ["default_plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
           },
           {
             foreignKeyName: "user_profiles_employee_id_fkey"
@@ -1170,6 +1219,13 @@ export type Database = {
             referencedRelation: "plants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "production_lines_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
+          },
         ]
       }
       source_location_mapping_overview: {
@@ -1201,10 +1257,135 @@ export type Database = {
             referencedRelation: "plants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
+          },
+        ]
+      }
+      supervisor_assignment_overview: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          display_order: number | null
+          effective_from: string | null
+          effective_to: string | null
+          employee_number: string | null
+          id: string | null
+          is_current: boolean | null
+          line_model_assignment_id: string | null
+          model_year: number | null
+          photo_path: string | null
+          plant_code: string | null
+          plant_id: string | null
+          plant_name: string | null
+          product_model_id: string | null
+          product_model_name: string | null
+          production_line_id: string | null
+          production_line_name: string | null
+          shift_code: string | null
+          shift_id: string | null
+          shift_name: string | null
+          supervisor_employee_id: string | null
+          supervisor_name: string | null
+          supervisor_plant_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_plant_id_fkey"
+            columns: ["supervisor_plant_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "employees_plant_id_fkey"
+            columns: ["supervisor_plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_plant_id_fkey"
+            columns: ["supervisor_plant_id"]
+            isOneToOne: false
+            referencedRelation: "supervisor_assignment_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "line_model_assignments_product_model_id_fkey"
+            columns: ["product_model_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["product_model_id"]
+          },
+          {
+            foreignKeyName: "line_model_assignments_product_model_id_fkey"
+            columns: ["product_model_id"]
+            isOneToOne: false
+            referencedRelation: "product_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_line_model_assignment_id_fkey"
+            columns: ["line_model_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "line_model_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_line_model_assignment_id_fkey"
+            columns: ["line_model_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "production_line_overview"
+            referencedColumns: ["line_model_assignment_id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["shift_id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_supervisor_employee_id_fkey"
+            columns: ["supervisor_employee_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["supervisor_employee_id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_supervisor_employee_id_fkey"
+            columns: ["supervisor_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Functions: {
+      create_supervisor_assignments: {
+        Args: {
+          effective_from_value: string
+          effective_to_value?: string
+          line_model_assignment_ids_value: string[]
+          shift_id_value: string
+          supervisor_employee_id_value: string
+        }
+        Returns: number
+      }
       import_employee_batch: {
         Args: { rows_value: Json }
         Returns: {
@@ -1269,6 +1450,16 @@ export type Database = {
         Args: {
           default_plant_value?: string
           preferred_theme_value: Database["public"]["Enums"]["theme_preference"]
+        }
+        Returns: undefined
+      }
+      update_supervisor_assignment: {
+        Args: {
+          active_value: boolean
+          assignment_id_value: string
+          effective_from_value: string
+          effective_to_value: string
+          shift_id_value: string
         }
         Returns: undefined
       }
