@@ -136,19 +136,22 @@ export const routes: Routes = [
         },
         loadComponent: loadPlaceholder,
       },
-      {
-        path: 'employees',
-        title: 'Empleados · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: managementRoles,
-          pageTitle: 'Empleados',
-          icon: 'groups',
-          description:
-            'Consulta, importación y administración del catálogo de empleados.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'employees',
+  title: 'Empleados · IPD Quality',
+  canActivate: [roleGuard],
+  data: {
+    roles: managementRoles,
+    pageTitle: 'Empleados',
+  },
+  loadComponent: () =>
+    import(
+      './features/employees/pages/employees-list/employees-list.component'
+    ).then(
+      component =>
+        component.EmployeesListComponent,
+    ),
+},
       {
         path: 'supervisor-assignments',
         title: 'Asignaciones · IPD Quality',

@@ -844,6 +844,60 @@ export type Database = {
         }
         Relationships: []
       }
+      source_location_mappings: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          display_name: string | null
+          id: string
+          notes: string | null
+          plant_id: string | null
+          source_code: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          id?: string
+          notes?: string | null
+          plant_id?: string | null
+          source_code: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          id?: string
+          notes?: string | null
+          plant_id?: string | null
+          source_code?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supervisor_assignments: {
         Row: {
           active: boolean
@@ -1118,8 +1172,49 @@ export type Database = {
           },
         ]
       }
+      source_location_mapping_overview: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          display_name: string | null
+          employee_count: number | null
+          id: string | null
+          notes: string | null
+          plant_code: string | null
+          plant_id: string | null
+          plant_name: string | null
+          source_code: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      import_employee_batch: {
+        Args: { rows_value: Json }
+        Returns: {
+          inserted_count: number
+          processed_count: number
+          rejected_count: number
+          unmapped_location_count: number
+          updated_count: number
+        }[]
+      }
       normalize_text: { Args: { input_value: string }; Returns: string }
       refresh_daily_ipd_record_total: {
         Args: { target_record_id: string }

@@ -1,0 +1,463 @@
+<section class="page-header">
+  <div>
+    <span>Directorio de personal</span>
+
+    <h2>Empleados</h2>
+
+    <p>
+      Consulta los trabajadores registrados por
+      número de reloj, nombre, planta, turno o estado.
+    </p>
+  </div>
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>groups</mat-icon>
+    </div>
+
+    <div>
+      <span>Resultados</span>
+
+      <strong>
+        {{ employeesService.totalCount() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon info">
+      <mat-icon>table_rows</mat-icon>
+    </div>
+
+    <div>
+      <span>Página actual</span>
+
+      <strong>
+        {{ currentPageCount() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>photo_camera</mat-icon>
+    </div>
+
+    <div>
+      <span>Con fotografía</span>
+
+      <strong>
+        {{ currentPageWithPhoto() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon warning">
+      <mat-icon>link_off</mat-icon>
+    </div>
+
+    <div>
+      <span>Sin línea asignada</span>
+
+      <strong>
+        {{ currentPageWithoutLine() }}
+      </strong>
+    </div>
+  </article>
+</section>
+
+<section class="directory-card">
+  <header class="filter-toolbar">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+      class="search-field"
+    >
+      <mat-label>
+        Buscar empleado
+      </mat-label>
+
+      <mat-icon matPrefix>
+        search
+      </mat-icon>
+
+      <input
+        matInput
+        [value]="searchTerm()"
+        placeholder="Número de reloj o nombre"
+        autocomplete="off"
+        (input)="updateSearch($event)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Limpiar búsqueda"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Planta</mat-label>
+
+      <mat-icon matPrefix>
+        factory
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedPlantId()"
+        (selectionChange)="
+          selectedPlantId.set($event.value);
+          applyFilters()
+        "
+      >
+        <mat-option value="all">
+          Todas las plantas
+        </mat-option>
+
+        @for (
+          plant of plantsService.plants();
+          track plant.id
+        ) {
+          <mat-option [value]="plant.id">
+            {{ plant.code }} · {{ plant.name }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Turno</mat-label>
+
+      <mat-icon matPrefix>
+        schedule
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedShiftId()"
+        (selectionChange)="
+          selectedShiftId.set($event.value);
+          applyFilters()
+        "
+      >
+        <mat-option value="all">
+          Todos los turnos
+        </mat-option>
+
+        @for (
+          shift of shiftsService.shifts();
+          track shift.id
+        ) {
+          <mat-option [value]="shift.id">
+            {{ shift.code }} · {{ shift.name }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Estado</mat-label>
+
+      <mat-icon matPrefix>
+        toggle_on
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedStatus()"
+        (selectionChange)="
+          selectedStatus.set($event.value);
+          applyFilters()
+        "
+      >
+        <mat-option value="all">
+          Todos
+        </mat-option>
+
+        <mat-option value="active">
+          Activos
+        </mat-option>
+
+        <mat-option value="inactive">
+          Inactivos
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar resultados"
+      [disabled]="isLoading()"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (isLoading()) {
+    <div class="state-container">
+      <mat-spinner diameter="42"></mat-spinner>
+
+      <span>
+        Consultando empleados...
+      </span>
+    </div>
+  } @else if (
+    employeesService.errorMessage()
+  ) {
+    <div class="state-container error-state">
+      <mat-icon>error_outline</mat-icon>
+
+      <h3>
+        No fue posible cargar los empleados
+      </h3>
+
+      <p>
+        {{ employeesService.errorMessage() }}
+      </p>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="reload()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Volver a intentar
+      </button>
+    </div>
+  } @else if (
+    employeesService.employees().length === 0
+  ) {
+    <div class="state-container">
+      <mat-icon>person_search</mat-icon>
+
+      <h3>
+        No se encontraron empleados
+      </h3>
+
+      <p>
+        Cambia los filtros o utiliza otro número
+        de reloj o nombre.
+      </p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table
+        mat-table
+        [dataSource]="
+          employeesService.employees()
+        "
+      >
+        <ng-container matColumnDef="employee">
+          <th mat-header-cell *matHeaderCellDef>
+            Empleado
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            <div class="employee-value">
+              <div class="employee-avatar">
+                {{ initials(employee) }}
+              </div>
+
+              <div>
+                <strong>
+                  {{ employee.fullName }}
+                </strong>
+
+                <span>
+                  {{
+                    employee.photoPath
+                      ? 'Fotografía registrada'
+                      : 'Sin fotografía'
+                  }}
+                </span>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container
+          matColumnDef="employeeNumber"
+        >
+          <th mat-header-cell *matHeaderCellDef>
+            No. reloj
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            <span class="employee-number">
+              {{ employee.employeeNumber }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="plant">
+          <th mat-header-cell *matHeaderCellDef>
+            Planta
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            @if (employee.plantCode) {
+              <span class="plant-badge">
+                {{ employee.plantCode }}
+              </span>
+            } @else {
+              <span class="empty-value">
+                Sin planta
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="shift">
+          <th mat-header-cell *matHeaderCellDef>
+            Turno
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            @if (employee.shiftCode) {
+              <div class="related-value">
+                <strong>
+                  {{ employee.shiftCode }}
+                </strong>
+
+                <span>
+                  {{ employee.shiftName }}
+                </span>
+              </div>
+            } @else {
+              <span class="empty-value">
+                Sin turno
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="line">
+          <th mat-header-cell *matHeaderCellDef>
+            Línea
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            {{
+              employee.productionLineName
+                ?? employee.sourceLineCode
+                ?? 'Sin línea'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="department">
+          <th mat-header-cell *matHeaderCellDef>
+            Departamento
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            <div class="related-value">
+              <strong>
+                {{
+                  employee.departmentName
+                    ?? 'Sin departamento'
+                }}
+              </strong>
+
+              @if (employee.departmentCode) {
+                <span>
+                  {{ employee.departmentCode }}
+                </span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="position">
+          <th mat-header-cell *matHeaderCellDef>
+            Puesto
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            {{
+              employee.jobPosition
+                ?? 'Sin puesto'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="serviceDate">
+          <th mat-header-cell *matHeaderCellDef>
+            Fecha de ingreso
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            {{
+              employee.serviceDate
+                ? (
+                    employee.serviceDate
+                    | date:'dd/MM/yyyy':'UTC'
+                  )
+                : '—'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            Estado
+          </th>
+
+          <td mat-cell *matCellDef="let employee">
+            <mat-chip
+              [class.active-chip]="employee.active"
+              [class.inactive-chip]="!employee.active"
+            >
+              {{
+                employee.active
+                  ? 'Activo'
+                  : 'Inactivo'
+              }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns"
+        ></tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          "
+          [class.inactive-row]="!row.active"
+        ></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="employeesService.totalCount()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      [showFirstLastButtons]="true"
+      (page)="handlePageChange($event)"
+    ></mat-paginator>
+  }
+</section>
