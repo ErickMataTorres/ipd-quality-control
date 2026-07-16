@@ -1,0 +1,353 @@
+<section class="page-header">
+  <div>
+    <span>Integración de personal</span>
+
+    <h2>Equivalencias HDC</h2>
+
+    <p>
+      Relaciona los códigos de localidad del archivo
+      HDC con las plantas registradas en el sistema.
+    </p>
+  </div>
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>location_on</mat-icon>
+    </div>
+
+    <div>
+      <span>Localidades HDC</span>
+      <strong>{{ totalMappings() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>link</mat-icon>
+    </div>
+
+    <div>
+      <span>Con planta</span>
+      <strong>{{ mappedMappings() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon warning">
+      <mat-icon>link_off</mat-icon>
+    </div>
+
+    <div>
+      <span>Sin identificar</span>
+      <strong>{{ unmappedMappings() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon info">
+      <mat-icon>groups</mat-icon>
+    </div>
+
+    <div>
+      <span>Empleados pendientes</span>
+      <strong>{{ unmappedEmployees() }}</strong>
+    </div>
+  </article>
+</section>
+
+<section class="table-card">
+  <header class="table-toolbar">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+      class="search-field"
+    >
+      <mat-label>Buscar localidad</mat-label>
+
+      <mat-icon matPrefix>search</mat-icon>
+
+      <input
+        matInput
+        [value]="searchTerm()"
+        placeholder="Código, planta o descripción"
+        (input)="updateSearch($event)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Limpiar búsqueda"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Clasificación</mat-label>
+
+      <mat-icon matPrefix>filter_alt</mat-icon>
+
+      <mat-select
+        [value]="selectedFilter()"
+        (selectionChange)="
+          selectedFilter.set($event.value)
+        "
+      >
+        <mat-option value="all">
+          Todas
+        </mat-option>
+
+        <mat-option value="mapped">
+          Con planta
+        </mat-option>
+
+        <mat-option value="unmapped">
+          Sin identificar
+        </mat-option>
+
+        <mat-option value="inactive">
+          Inactivas
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar listado"
+      [disabled]="mappingsService.isLoading()"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (mappingsService.isLoading()) {
+    <div class="state-container">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Cargando equivalencias...</span>
+    </div>
+  } @else if (mappingsService.errorMessage()) {
+    <div class="state-container">
+      <mat-icon>error_outline</mat-icon>
+
+      <h3>
+        No fue posible cargar las equivalencias
+      </h3>
+
+      <p>
+        {{ mappingsService.errorMessage() }}
+      </p>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="reload()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Volver a intentar
+      </button>
+    </div>
+  } @else if (filteredMappings().length === 0) {
+    <div class="state-container">
+      <mat-icon>location_searching</mat-icon>
+
+      <h3>No se encontraron localidades</h3>
+
+      <p>
+        Cambia la búsqueda o el filtro seleccionado.
+      </p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table
+        mat-table
+        [dataSource]="filteredMappings()"
+      >
+        <ng-container matColumnDef="sourceCode">
+          <th mat-header-cell *matHeaderCellDef>
+            Código HDC
+          </th>
+
+          <td mat-cell *matCellDef="let mapping">
+            <strong class="source-code">
+              {{ mapping.sourceCode }}
+            </strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="displayName">
+          <th mat-header-cell *matHeaderCellDef>
+            Descripción
+          </th>
+
+          <td mat-cell *matCellDef="let mapping">
+            <div class="description-value">
+              <strong>
+                {{
+                  mapping.displayName
+                    ?? 'Sin descripción'
+                }}
+              </strong>
+
+              @if (mapping.notes) {
+                <span>{{ mapping.notes }}</span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="plant">
+          <th mat-header-cell *matHeaderCellDef>
+            Planta relacionada
+          </th>
+
+          <td mat-cell *matCellDef="let mapping">
+            @if (mapping.plantCode) {
+              <div class="plant-value">
+                <span class="plant-badge">
+                  {{ mapping.plantCode }}
+                </span>
+
+                <small>
+                  {{ mapping.plantName }}
+                </small>
+              </div>
+            } @else {
+              <span class="unmapped-value">
+                Sin planta identificada
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employees">
+          <th mat-header-cell *matHeaderCellDef>
+            Empleados
+          </th>
+
+          <td mat-cell *matCellDef="let mapping">
+            <span class="employee-count">
+              {{ mapping.employeeCount }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            Estado
+          </th>
+
+          <td mat-cell *matCellDef="let mapping">
+            <mat-chip
+              [class.active-chip]="mapping.active"
+              [class.inactive-chip]="!mapping.active"
+            >
+              {{
+                mapping.active
+                  ? 'Activa'
+                  : 'Inactiva'
+              }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="updatedAt">
+          <th mat-header-cell *matHeaderCellDef>
+            Actualización
+          </th>
+
+          <td mat-cell *matCellDef="let mapping">
+            {{
+              mapping.updatedAt
+                | date:'dd/MM/yyyy HH:mm'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let mapping"
+            class="actions-cell"
+          >
+            <button
+              mat-icon-button
+              type="button"
+              [matMenuTriggerFor]="actionsMenu"
+              [matMenuTriggerData]="{
+                mapping: mapping
+              }"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns"
+        ></tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          "
+          [class.inactive-row]="!row.active"
+        ></tr>
+      </table>
+    </div>
+  }
+</section>
+
+<mat-menu #actionsMenu="matMenu">
+  <ng-template
+    matMenuContent
+    let-mapping="mapping"
+  >
+    <button
+      mat-menu-item
+      type="button"
+      (click)="openEditDialog(mapping)"
+    >
+      <mat-icon>edit</mat-icon>
+      <span>Configurar equivalencia</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="toggleMappingStatus(mapping)"
+    >
+      <mat-icon>
+        {{
+          mapping.active
+            ? 'pause_circle'
+            : 'play_circle'
+        }}
+      </mat-icon>
+
+      <span>
+        {{
+          mapping.active
+            ? 'Desactivar'
+            : 'Activar'
+        }}
+      </span>
+    </button>
+  </ng-template>
+</mat-menu>

@@ -1,0 +1,135 @@
+<h2 mat-dialog-title>
+  Configurar localidad HDC
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="source-location-mapping-form"
+    class="mapping-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <section class="source-summary">
+      <div class="source-icon">
+        <mat-icon>location_on</mat-icon>
+      </div>
+
+      <div>
+        <span>Código de localidad HDC</span>
+
+        <strong>
+          {{ data.mapping.sourceCode }}
+        </strong>
+
+        <small>
+          {{
+            data.mapping.employeeCount
+          }}
+          empleados relacionados
+        </small>
+      </div>
+    </section>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Planta relacionada</mat-label>
+
+      <mat-icon matPrefix>
+        factory
+      </mat-icon>
+
+      <mat-select formControlName="plantId">
+        <mat-option value="">
+          Sin planta identificada
+        </mat-option>
+
+        @for (
+          plant of availablePlants;
+          track plant.id
+        ) {
+          <mat-option [value]="plant.id">
+            {{ plant.code }} · {{ plant.name }}
+          </mat-option>
+        }
+      </mat-select>
+
+      <mat-hint>
+        Al guardar, los empleados de esta localidad
+        se actualizarán automáticamente.
+      </mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre descriptivo</mat-label>
+
+      <mat-icon matPrefix>
+        label
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="displayName"
+        placeholder="Ejemplo: Planta MCH2"
+        autocomplete="off"
+      />
+
+      <mat-hint align="end">
+        {{
+          form.controls.displayName.value.length
+        }}/150
+      </mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Notas</mat-label>
+
+      <textarea
+        matInput
+        formControlName="notes"
+        rows="4"
+        placeholder="Información sobre la equivalencia"
+      ></textarea>
+
+      <mat-hint align="end">
+        {{
+          form.controls.notes.value.length
+        }}/1000
+      </mat-hint>
+    </mat-form-field>
+
+    <mat-slide-toggle
+      formControlName="active"
+    >
+      Equivalencia activa
+    </mat-slide-toggle>
+
+    <div class="information-note">
+      <mat-icon>info</mat-icon>
+
+      <span>
+        Dejar la planta vacía conserva el código HDC,
+        pero los empleados permanecerán como
+        “Sin planta asignada”.
+      </span>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="source-location-mapping-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>save</mat-icon>
+    Guardar equivalencia
+  </button>
+</mat-dialog-actions>

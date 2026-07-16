@@ -223,6 +223,12 @@ export class AppShellComponent
             roles: ADMIN_ROLES,
           },
           {
+  label: 'Equivalencias HDC',
+  icon: 'compare_arrows',
+  route: '/source-location-mappings',
+  roles: ADMIN_ROLES,
+},
+          {
             label: 'Tipos de defecto',
             icon: 'rule',
             route: '/defect-types',

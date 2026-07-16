@@ -60,6 +60,25 @@ export const routes: Routes = [
       ),
     children: [
       {
+  path: 'source-location-mappings',
+  title: 'Equivalencias HDC · IPD Quality',
+  canActivate: [roleGuard],
+
+  data: {
+    roles: administratorRoles,
+    pageTitle: 'Equivalencias HDC',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/source-location-mappings/pages/source-location-mappings-list/source-location-mappings-list.component'
+    ).then(
+      component =>
+        component
+          .SourceLocationMappingsListComponent,
+    ),
+},
+      {
         path: 'dashboard',
         title: 'Panel principal · IPD Quality',
         data: {
