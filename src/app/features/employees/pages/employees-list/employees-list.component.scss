@@ -25,6 +25,16 @@
     color: var(--app-text-muted);
     line-height: 1.55;
   }
+
+  display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 2rem;
+
+> button {
+  flex-shrink: 0;
+}
+
 }
 
 .summary-grid {
@@ -287,4 +297,13 @@ mat-paginator {
       grid-column: auto;
     }
   }
+
+.page-header {
+  flex-direction: column;
+
+  > button {
+    width: 100%;
+  }
+}
+
 }

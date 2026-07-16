@@ -1,0 +1,480 @@
+<h2 mat-dialog-title>
+  Importar empleados desde HDC
+</h2>
+
+<mat-dialog-content>
+  @if (state() === 'idle') {
+    <section class="file-selection">
+      <div class="upload-icon">
+        <mat-icon>upload_file</mat-icon>
+      </div>
+
+      <h3>Selecciona el archivo de IPD</h3>
+
+      <p>
+        Se analizará exclusivamente la hoja
+        <strong>HDC</strong>. Ningún dato será
+        guardado hasta que confirmes la importación.
+      </p>
+
+      <input
+        #fileInput
+        hidden
+        type="file"
+        accept=".xlsx,.xlsm,.xls"
+        (change)="selectFile($event)"
+      />
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="fileInput.click()"
+      >
+        <mat-icon>folder_open</mat-icon>
+        Seleccionar Excel
+      </button>
+    </section>
+  }
+
+  @if (state() === 'parsing') {
+    <section class="loading-state">
+      <mat-spinner diameter="46"></mat-spinner>
+
+      <h3>Analizando hoja HDC</h3>
+
+      <p>
+        Validando encabezados, empleados,
+        fechas y números de reloj.
+      </p>
+    </section>
+  }
+
+  @if (
+    state() === 'ready'
+    && preview();
+    as importPreview
+  ) {
+    <section class="preview-section">
+      <header class="file-header">
+        <mat-icon>description</mat-icon>
+
+        <div>
+          <strong>
+            {{ importPreview.fileName }}
+          </strong>
+
+          <span>
+            Hoja: {{ importPreview.sheetName }}
+          </span>
+        </div>
+      </header>
+
+      <div class="summary-grid">
+        <article>
+          <span>Filas detectadas</span>
+          <strong>
+            {{ importPreview.totalRows }}
+          </strong>
+        </article>
+
+        <article class="success">
+          <span>Válidas</span>
+          <strong>
+            {{ importPreview.validRows.length }}
+          </strong>
+        </article>
+
+        <article class="danger">
+          <span>Con errores</span>
+          <strong>
+            {{ importPreview.errors.length }}
+          </strong>
+        </article>
+
+        <article>
+          <span>Localidades</span>
+          <strong>
+            {{
+              importPreview
+                .uniqueLocationCodes
+                .length
+            }}
+          </strong>
+        </article>
+      </div>
+
+      <div class="mapping-summary">
+        <div>
+          <mat-icon>factory</mat-icon>
+
+          <span>
+            HC0707 → MCH1
+          </span>
+
+          <strong>
+            {{ importPreview.hc0707Count }}
+          </strong>
+        </div>
+
+        <div>
+          <mat-icon>help_outline</mat-icon>
+
+          <span>
+            Otras localidades
+          </span>
+
+          <strong>
+            {{
+              importPreview.otherLocationCount
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <mat-icon>location_off</mat-icon>
+
+          <span>
+            Sin localidad
+          </span>
+
+          <strong>
+            {{
+              importPreview
+                .withoutLocationCount
+            }}
+          </strong>
+        </div>
+      </div>
+
+      <h3 class="section-title">
+        Vista previa
+      </h3>
+
+      <div class="preview-table">
+        <table
+          mat-table
+          [dataSource]="
+            importPreview.previewRows
+          "
+        >
+          <ng-container
+            matColumnDef="employeeNumber"
+          >
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            >
+              No. reloj
+            </th>
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+            >
+              {{ row.employeeNumber }}
+            </td>
+          </ng-container>
+
+          <ng-container
+            matColumnDef="fullName"
+          >
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            >
+              Nombre
+            </th>
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+            >
+              <strong>
+                {{ row.fullName }}
+              </strong>
+            </td>
+          </ng-container>
+
+          <ng-container
+            matColumnDef="location"
+          >
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            >
+              Localidad
+            </th>
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+            >
+              {{
+                row.sourceLocationCode
+                  ?? '—'
+              }}
+            </td>
+          </ng-container>
+
+          <ng-container
+            matColumnDef="shift"
+          >
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            >
+              Turno
+            </th>
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+            >
+              {{
+                row.sourceShiftCode
+                  ?? '—'
+              }}
+            </td>
+          </ng-container>
+
+          <ng-container
+            matColumnDef="line"
+          >
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+            >
+              Línea HDC
+            </th>
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+            >
+              {{
+                row.sourceLineCode
+                  ?? '—'
+              }}
+            </td>
+          </ng-container>
+
+          <tr
+            mat-header-row
+            *matHeaderRowDef="previewColumns"
+          ></tr>
+
+          <tr
+            mat-row
+            *matRowDef="
+              let row;
+              columns: previewColumns
+            "
+          ></tr>
+        </table>
+      </div>
+
+      @if (importPreview.errors.length > 0) {
+        <section class="validation-errors">
+          <header>
+            <mat-icon>warning</mat-icon>
+
+            <div>
+              <strong>
+                Filas que no serán importadas
+              </strong>
+
+              <span>
+                Se muestran hasta 20 errores.
+              </span>
+            </div>
+          </header>
+
+          @for (
+            error of
+              importPreview.errors.slice(0, 20);
+            track error.rowNumber
+          ) {
+            <div class="error-row">
+              <strong>
+                Fila {{ error.rowNumber }}
+              </strong>
+
+              <span>
+                {{ error.employeeNumber }}
+              </span>
+
+              <p>
+                {{ error.message }}
+              </p>
+            </div>
+          }
+        </section>
+      }
+    </section>
+  }
+
+  @if (state() === 'importing') {
+    <section class="import-progress">
+      <div class="upload-icon">
+        <mat-icon>cloud_upload</mat-icon>
+      </div>
+
+      <h3>Importando empleados</h3>
+
+      <p>
+        No cierres esta ventana hasta que
+        finalice el proceso.
+      </p>
+
+      <mat-progress-bar
+        mode="determinate"
+        [value]="progress()?.percentage ?? 0"
+      ></mat-progress-bar>
+
+      <strong>
+        {{ progress()?.percentage ?? 0 }}%
+      </strong>
+
+      <span>
+        {{
+          progress()?.processedRows ?? 0
+        }}
+        de
+        {{
+          progress()?.totalRows ?? 0
+        }}
+        empleados
+      </span>
+
+      <small>
+        Lote
+        {{
+          progress()?.currentBatch ?? 0
+        }}
+        de
+        {{
+          progress()?.totalBatches ?? 0
+        }}
+      </small>
+    </section>
+  }
+
+  @if (
+    state() === 'complete'
+    && summary();
+    as result
+  ) {
+    <section class="complete-state">
+      <div class="complete-icon">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+
+      <h3>Importación terminada</h3>
+
+      <div class="result-grid">
+        <article>
+          <span>Procesados</span>
+          <strong>
+            {{ result.processedCount }}
+          </strong>
+        </article>
+
+        <article>
+          <span>Insertados</span>
+          <strong>
+            {{ result.insertedCount }}
+          </strong>
+        </article>
+
+        <article>
+          <span>Actualizados</span>
+          <strong>
+            {{ result.updatedCount }}
+          </strong>
+        </article>
+
+        <article>
+          <span>Rechazados</span>
+          <strong>
+            {{ result.rejectedCount }}
+          </strong>
+        </article>
+
+        <article>
+          <span>Sin planta identificada</span>
+          <strong>
+            {{
+              result.unmappedLocationCount
+            }}
+          </strong>
+        </article>
+      </div>
+    </section>
+  }
+
+  @if (state() === 'error') {
+    <section class="error-state">
+      <div class="error-icon">
+        <mat-icon>error_outline</mat-icon>
+      </div>
+
+      <h3>No fue posible continuar</h3>
+
+      <p>
+        {{ errorMessage() }}
+      </p>
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="reset()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Intentar nuevamente
+      </button>
+    </section>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @if (
+    state() === 'idle'
+    || state() === 'ready'
+  ) {
+    <button
+      mat-button
+      type="button"
+      (click)="close()"
+    >
+      Cancelar
+    </button>
+  }
+
+  @if (state() === 'ready') {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="
+        !preview()
+        || preview()!.validRows.length === 0
+      "
+      (click)="importEmployees()"
+    >
+      <mat-icon>cloud_upload</mat-icon>
+
+      Importar
+      {{ preview()?.validRows?.length ?? 0 }}
+      empleados
+    </button>
+  }
+
+  @if (state() === 'complete') {
+    <button
+      mat-flat-button
+      type="button"
+      (click)="close()"
+    >
+      Finalizar
+    </button>
+  }
+</mat-dialog-actions>

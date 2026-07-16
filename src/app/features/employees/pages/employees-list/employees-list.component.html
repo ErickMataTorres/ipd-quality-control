@@ -9,6 +9,17 @@
       número de reloj, nombre, planta, turno o estado.
     </p>
   </div>
+
+  @if (canImportEmployees()) {
+    <button
+      mat-flat-button
+      type="button"
+      (click)="openImportDialog()"
+    >
+      <mat-icon>upload_file</mat-icon>
+      Importar HDC
+    </button>
+  }
 </section>
 
 <section class="summary-grid">

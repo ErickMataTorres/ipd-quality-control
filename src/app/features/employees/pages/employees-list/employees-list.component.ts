@@ -1,3 +1,16 @@
+import {
+  MatDialog,
+} from '@angular/material/dialog';
+
+import {
+  UserProfileService,
+} from '../../../../core/user-profile/user-profile.service';
+
+import {
+  EmployeeImportDialogComponent,
+  EmployeeImportDialogResult,
+} from '../../components/employee-import-dialog/employee-import-dialog.component';
+
 import { DatePipe } from '@angular/common';
 
 import {
@@ -42,6 +55,7 @@ import {
 import {
   debounceTime,
   distinctUntilChanged,
+  firstValueFrom,
   Subject,
 } from 'rxjs';
 
@@ -81,6 +95,19 @@ import {
 })
 export class EmployeesListComponent
   implements OnInit {
+
+    private readonly dialog =
+  inject(MatDialog);
+
+private readonly userProfileService =
+  inject(UserProfileService);
+
+readonly canImportEmployees = computed(
+  () =>
+    this.userProfileService.role()
+    === 'system_administrator',
+);
+
   private readonly paginatorIntl =
     inject(MatPaginatorIntl);
 
@@ -209,6 +236,33 @@ export class EmployeesListComponent
 
     void this.loadEmployees();
   }
+
+  async openImportDialog(): Promise<void> {
+  const dialogReference =
+    this.dialog.open<
+      EmployeeImportDialogComponent,
+      void,
+      EmployeeImportDialogResult
+    >(
+      EmployeeImportDialogComponent,
+      {
+        width: '960px',
+        maxWidth: 'calc(100vw - 24px)',
+        disableClose: true,
+        autoFocus: false,
+      },
+    );
+
+  const result =
+    await firstValueFrom(
+      dialogReference.afterClosed(),
+    );
+
+  if (result?.imported) {
+    this.pageIndex.set(0);
+    await this.loadEmployees();
+  }
+}
 
   async reload(): Promise<void> {
     await this.loadEmployees();
