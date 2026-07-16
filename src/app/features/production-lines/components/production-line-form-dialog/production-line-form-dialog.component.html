@@ -1,0 +1,233 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar línea'
+      : 'Agregar línea'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="production-line-form"
+    class="line-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Planta</mat-label>
+
+        <mat-icon matPrefix>
+          factory
+        </mat-icon>
+
+        <mat-select formControlName="plantId">
+          @for (
+            plant of availablePlants;
+            track plant.id
+          ) {
+            <mat-option [value]="plant.id">
+              {{ plant.code }} · {{ plant.name }}
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (
+          form.controls.plantId.hasError(
+            'required'
+          )
+          && form.controls.plantId.touched
+        ) {
+          <mat-error>
+            Selecciona una planta.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Orden de visualización</mat-label>
+
+        <mat-icon matPrefix>
+          sort
+        </mat-icon>
+
+        <input
+          matInput
+          type="number"
+          min="0"
+          max="9999"
+          formControlName="displayOrder"
+        />
+
+        <mat-hint>
+          Determina el orden de las tarjetas.
+        </mat-hint>
+
+        @if (
+          form.controls.displayOrder.invalid
+          && form.controls.displayOrder.touched
+        ) {
+          <mat-error>
+            Ingresa un orden válido.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre de la línea</mat-label>
+
+      <mat-icon matPrefix>
+        schema
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="name"
+        placeholder="Ejemplo: Body 1"
+        autocomplete="off"
+      />
+
+      @if (
+        form.controls.name.hasError('required')
+        && form.controls.name.touched
+      ) {
+        <mat-error>
+          El nombre de la línea es obligatorio.
+        </mat-error>
+      }
+
+      @if (
+        form.controls.name.hasError('maxlength')
+      ) {
+        <mat-error>
+          El nombre no puede exceder 120 caracteres.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Modelo</mat-label>
+
+        <mat-icon matPrefix>
+          directions_car
+        </mat-icon>
+
+        <mat-select
+          formControlName="productModelId"
+        >
+          @for (
+            model of availableModels;
+            track model.id
+          ) {
+            <mat-option [value]="model.id">
+              {{ model.name }}
+
+              @if (model.model_year) {
+                · {{ model.model_year }}
+              }
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (
+          form.controls.productModelId.hasError(
+            'required'
+          )
+          && form.controls.productModelId.touched
+        ) {
+          <mat-error>
+            Selecciona un modelo.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Inicio de vigencia</mat-label>
+
+        <mat-icon matPrefix>
+          event
+        </mat-icon>
+
+        <input
+          matInput
+          type="date"
+          formControlName="effectiveFrom"
+        />
+
+        @if (
+          form.controls.effectiveFrom.hasError(
+            'required'
+          )
+          && form.controls.effectiveFrom.touched
+        ) {
+          <mat-error>
+            La fecha es obligatoria.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (isEditMode) {
+      <div class="history-note">
+        <mat-icon>history</mat-icon>
+
+        <span>
+          Si seleccionas un modelo diferente, esta
+          fecha indicará cuándo comienza la nueva
+          vigencia. El modelo anterior conservará
+          su historial.
+        </span>
+      </div>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción</mat-label>
+
+      <textarea
+        matInput
+        formControlName="description"
+        rows="4"
+        placeholder="Descripción opcional de la línea"
+      ></textarea>
+
+      <mat-hint align="end">
+        {{
+          form.controls.description.value.length
+        }}/500
+      </mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="production-line-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Agregar línea'
+    }}
+  </button>
+</mat-dialog-actions>

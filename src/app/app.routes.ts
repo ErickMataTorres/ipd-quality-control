@@ -192,19 +192,22 @@ export const routes: Routes = [
         component.PlantsListComponent,
     ),
 },
-      {
-        path: 'production-lines',
-        title: 'Líneas · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: managementRoles,
-          pageTitle: 'Líneas de producción',
-          icon: 'schema',
-          description:
-            'Administración de las líneas pertenecientes a cada planta.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'production-lines',
+  title: 'Líneas · IPD Quality',
+  canActivate: [roleGuard],
+  data: {
+    roles: managementRoles,
+    pageTitle: 'Líneas de producción',
+  },
+  loadComponent: () =>
+    import(
+      './features/production-lines/pages/production-lines-list/production-lines-list.component'
+    ).then(
+      component =>
+        component.ProductionLinesListComponent,
+    ),
+},
 {
   path: 'product-models',
   title: 'Modelos · IPD Quality',

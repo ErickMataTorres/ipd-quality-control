@@ -1,0 +1,57 @@
+:host {
+  display: block;
+}
+
+.line-form {
+  width: min(100%, 680px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-dialog-content {
+  width: min(730px, calc(100vw - 32px));
+  max-height: 72dvh;
+}
+
+mat-dialog-actions {
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.history-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  color: var(--app-text-muted);
+  background: var(--app-primary-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+
+  mat-icon {
+    flex-shrink: 0;
+    color: var(--app-primary);
+  }
+}
+
+@media (max-width: 650px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
