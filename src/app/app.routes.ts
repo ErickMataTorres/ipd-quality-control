@@ -190,19 +190,24 @@ export const routes: Routes = [
           .SupervisorAssignmentsListComponent,
     ),
 },
-      {
-        path: 'ipd-targets',
-        title: 'Objetivos IPD · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: managementRoles,
-          pageTitle: 'Objetivos IPD',
-          icon: 'track_changes',
-          description:
-            'Configuración de targets por línea, modelo, turno y periodo de vigencia.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'ipd-targets',
+  title: 'Objetivos IPD · IPD Quality',
+  canActivate: [roleGuard],
+
+  data: {
+    roles: managementRoles,
+    pageTitle: 'Objetivos IPD',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/ipd-targets/pages/ipd-targets-list/ipd-targets-list.component'
+    ).then(
+      component =>
+        component.IpdTargetsListComponent,
+    ),
+},
 {
   path: 'plants',
   title: 'Plantas · IPD Quality',

@@ -1,0 +1,285 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar objetivo IPD'
+      : 'Agregar objetivo IPD'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="ipd-target-form"
+    class="target-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <div class="formula-note">
+      <div class="formula-icon">
+        <mat-icon>percent</mat-icon>
+      </div>
+
+      <div>
+        <strong>
+          IPD = defectos ÷ arneses producidos × 100
+        </strong>
+
+        <span>
+          Un resultado menor o igual al objetivo
+          se considera dentro del target.
+        </span>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Planta</mat-label>
+
+        <mat-icon matPrefix>
+          factory
+        </mat-icon>
+
+        <mat-select
+          formControlName="plantId"
+          (selectionChange)="
+            handlePlantChange($event.value)
+          "
+        >
+          @for (
+            plant of availablePlants;
+            track plant.id
+          ) {
+            <mat-option [value]="plant.id">
+              {{ plant.code }} · {{ plant.name }}
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (
+          form.controls.plantId.invalid
+          && form.controls.plantId.touched
+        ) {
+          <mat-error>
+            Selecciona una planta.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Línea y modelo</mat-label>
+
+        <mat-icon matPrefix>
+          schema
+        </mat-icon>
+
+        <mat-select
+          formControlName="lineModelAssignmentId"
+        >
+          @for (
+            line of availableLines();
+            track line.id
+          ) {
+            <mat-option
+              [value]="
+                line.line_model_assignment_id
+              "
+            >
+              {{ lineLabel(line) }}
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (
+          form.controls
+            .lineModelAssignmentId
+            .invalid
+          && form.controls
+            .lineModelAssignmentId
+            .touched
+        ) {
+          <mat-error>
+            Selecciona una línea.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (
+      form.controls.plantId.value
+      && availableLines().length === 0
+    ) {
+      <div class="inline-warning">
+        <mat-icon>warning</mat-icon>
+
+        <span>
+          La planta no tiene líneas activas con
+          un modelo vigente.
+        </span>
+      </div>
+    }
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Aplicar a</mat-label>
+
+        <mat-icon matPrefix>
+          schedule
+        </mat-icon>
+
+        <mat-select formControlName="shiftId">
+          <mat-option value="general">
+            Objetivo general
+          </mat-option>
+
+          @for (
+            shift of availableShifts;
+            track shift.id
+          ) {
+            <mat-option [value]="shift.id">
+              {{ shift.code }} · {{ shift.name }}
+            </mat-option>
+          }
+        </mat-select>
+
+        <mat-hint>
+          El turno específico tiene prioridad
+          sobre el objetivo general.
+        </mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Objetivo IPD</mat-label>
+
+        <mat-icon matPrefix>
+          track_changes
+        </mat-icon>
+
+        <input
+          matInput
+          type="number"
+          min="0"
+          max="9999"
+          step="0.01"
+          formControlName="targetPercentage"
+        />
+
+        <span matTextSuffix>%</span>
+
+        @if (
+          form.controls
+            .targetPercentage
+            .invalid
+          && form.controls
+            .targetPercentage
+            .touched
+        ) {
+          <mat-error>
+            Ingresa un objetivo igual o mayor que 0.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Inicio de vigencia</mat-label>
+
+        <mat-icon matPrefix>
+          event
+        </mat-icon>
+
+        <input
+          matInput
+          type="date"
+          formControlName="effectiveFrom"
+        />
+
+        @if (
+          form.controls.effectiveFrom.invalid
+          && form.controls.effectiveFrom.touched
+        ) {
+          <mat-error>
+            La fecha inicial es obligatoria.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fin de vigencia</mat-label>
+
+        <mat-icon matPrefix>
+          event_busy
+        </mat-icon>
+
+        <input
+          matInput
+          type="date"
+          formControlName="effectiveTo"
+        />
+
+        <mat-hint>
+          Déjala vacía para vigencia indefinida.
+        </mat-hint>
+
+        @if (
+          form.controls.effectiveTo.hasError(
+            'beforeStart'
+          )
+        ) {
+          <mat-error>
+            La fecha final no puede ser anterior
+            a la inicial.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (isEditMode) {
+      <mat-slide-toggle
+        formControlName="active"
+      >
+        Objetivo activo
+      </mat-slide-toggle>
+    }
+
+    <div class="information-note">
+      <mat-icon>info</mat-icon>
+
+      <span>
+        Puedes conservar un objetivo general y crear
+        objetivos específicos por turno. No se permiten
+        periodos superpuestos dentro del mismo alcance.
+      </span>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="ipd-target-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Agregar objetivo'
+    }}
+  </button>
+</mat-dialog-actions>

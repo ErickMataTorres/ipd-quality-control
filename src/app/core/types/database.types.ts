@@ -258,6 +258,13 @@ export type Database = {
             foreignKeyName: "daily_ipd_records_target_id_fkey"
             columns: ["target_id"]
             isOneToOne: false
+            referencedRelation: "ipd_target_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_ipd_records_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
             referencedRelation: "ipd_targets"
             referencedColumns: ["id"]
           },
@@ -509,6 +516,13 @@ export type Database = {
             foreignKeyName: "employees_plant_id_fkey"
             columns: ["plant_id"]
             isOneToOne: false
+            referencedRelation: "ipd_target_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "employees_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
             referencedRelation: "plants"
             referencedColumns: ["id"]
           },
@@ -524,6 +538,13 @@ export type Database = {
             columns: ["production_line_id"]
             isOneToOne: false
             referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["production_line_id"]
+          },
+          {
+            foreignKeyName: "employees_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
+            referencedRelation: "ipd_target_overview"
             referencedColumns: ["production_line_id"]
           },
           {
@@ -688,6 +709,13 @@ export type Database = {
             foreignKeyName: "line_model_assignments_production_line_id_fkey"
             columns: ["production_line_id"]
             isOneToOne: false
+            referencedRelation: "ipd_target_overview"
+            referencedColumns: ["production_line_id"]
+          },
+          {
+            foreignKeyName: "line_model_assignments_production_line_id_fkey"
+            columns: ["production_line_id"]
+            isOneToOne: false
             referencedRelation: "production_line_overview"
             referencedColumns: ["id"]
           },
@@ -824,6 +852,13 @@ export type Database = {
             foreignKeyName: "production_lines_plant_id_fkey"
             columns: ["plant_id"]
             isOneToOne: false
+            referencedRelation: "ipd_target_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "production_lines_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
             referencedRelation: "plants"
             referencedColumns: ["id"]
           },
@@ -915,6 +950,13 @@ export type Database = {
             columns: ["plant_id"]
             isOneToOne: false
             referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "ipd_target_overview"
             referencedColumns: ["plant_id"]
           },
           {
@@ -1049,6 +1091,13 @@ export type Database = {
             foreignKeyName: "user_plant_access_plant_id_fkey"
             columns: ["plant_id"]
             isOneToOne: false
+            referencedRelation: "ipd_target_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "user_plant_access_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
             referencedRelation: "plants"
             referencedColumns: ["id"]
           },
@@ -1105,6 +1154,13 @@ export type Database = {
             columns: ["default_plant_id"]
             isOneToOne: false
             referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "user_profiles_default_plant_id_fkey"
+            columns: ["default_plant_id"]
+            isOneToOne: false
+            referencedRelation: "ipd_target_overview"
             referencedColumns: ["plant_id"]
           },
           {
@@ -1171,6 +1227,76 @@ export type Database = {
         }
         Relationships: []
       }
+      ipd_target_overview: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          display_order: number | null
+          effective_from: string | null
+          effective_to: string | null
+          id: string | null
+          is_current: boolean | null
+          is_general_target: boolean | null
+          line_model_assignment_id: string | null
+          model_year: number | null
+          plant_code: string | null
+          plant_id: string | null
+          plant_name: string | null
+          product_model_id: string | null
+          product_model_name: string | null
+          production_line_id: string | null
+          production_line_name: string | null
+          shift_code: string | null
+          shift_id: string | null
+          shift_name: string | null
+          target_percentage: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ipd_targets_line_model_assignment_id_fkey"
+            columns: ["line_model_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "line_model_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ipd_targets_line_model_assignment_id_fkey"
+            columns: ["line_model_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "production_line_overview"
+            referencedColumns: ["line_model_assignment_id"]
+          },
+          {
+            foreignKeyName: "ipd_targets_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["shift_id"]
+          },
+          {
+            foreignKeyName: "ipd_targets_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_model_assignments_product_model_id_fkey"
+            columns: ["product_model_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["product_model_id"]
+          },
+          {
+            foreignKeyName: "line_model_assignments_product_model_id_fkey"
+            columns: ["product_model_id"]
+            isOneToOne: false
+            referencedRelation: "product_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_line_overview: {
         Row: {
           active: boolean | null
@@ -1216,6 +1342,13 @@ export type Database = {
             foreignKeyName: "production_lines_plant_id_fkey"
             columns: ["plant_id"]
             isOneToOne: false
+            referencedRelation: "ipd_target_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "production_lines_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
             referencedRelation: "plants"
             referencedColumns: ["id"]
           },
@@ -1248,6 +1381,13 @@ export type Database = {
             columns: ["plant_id"]
             isOneToOne: false
             referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "source_location_mappings_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "ipd_target_overview"
             referencedColumns: ["plant_id"]
           },
           {
@@ -1300,6 +1440,13 @@ export type Database = {
             columns: ["supervisor_plant_id"]
             isOneToOne: false
             referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["plant_id"]
+          },
+          {
+            foreignKeyName: "employees_plant_id_fkey"
+            columns: ["supervisor_plant_id"]
+            isOneToOne: false
+            referencedRelation: "ipd_target_overview"
             referencedColumns: ["plant_id"]
           },
           {
@@ -1400,6 +1547,18 @@ export type Database = {
       refresh_daily_ipd_record_total: {
         Args: { target_record_id: string }
         Returns: undefined
+      }
+      save_ipd_target: {
+        Args: {
+          active_value: boolean
+          effective_from_value: string
+          effective_to_value: string
+          line_model_assignment_id_value: string
+          shift_id_value: string
+          target_id_value: string
+          target_percentage_value: number
+        }
+        Returns: string
       }
       save_production_line: {
         Args: {

@@ -1,0 +1,485 @@
+<section class="page-header">
+  <div>
+    <span>Administración operativa</span>
+
+    <h2>Objetivos IPD</h2>
+
+    <p>
+      Configura el target general o específico por
+      turno para cada línea, modelo y periodo.
+    </p>
+  </div>
+
+  @if (canManage()) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="isSaving()"
+      (click)="openCreateDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      Agregar objetivo
+    </button>
+  }
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>track_changes</mat-icon>
+    </div>
+
+    <div>
+      <span>Total histórico</span>
+      <strong>{{ totalTargets() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>verified</mat-icon>
+    </div>
+
+    <div>
+      <span>Objetivos vigentes</span>
+      <strong>{{ currentTargets() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon info">
+      <mat-icon>public</mat-icon>
+    </div>
+
+    <div>
+      <span>Generales vigentes</span>
+      <strong>
+        {{ currentGeneralTargets() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon warning">
+      <mat-icon>schedule</mat-icon>
+    </div>
+
+    <div>
+      <span>Por turno vigentes</span>
+      <strong>
+        {{ currentShiftTargets() }}
+      </strong>
+    </div>
+  </article>
+</section>
+
+<section class="table-card">
+  <header class="table-toolbar">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+      class="search-field"
+    >
+      <mat-label>Buscar objetivo</mat-label>
+
+      <mat-icon matPrefix>
+        search
+      </mat-icon>
+
+      <input
+        matInput
+        [value]="searchTerm()"
+        placeholder="Línea, modelo, turno o porcentaje"
+        (input)="updateSearch($event)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Limpiar búsqueda"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Planta</mat-label>
+
+      <mat-icon matPrefix>
+        factory
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedPlantId()"
+        (selectionChange)="
+          selectedPlantId.set($event.value)
+        "
+      >
+        <mat-option value="all">
+          Todas las plantas
+        </mat-option>
+
+        @for (
+          plant of plantsService.plants();
+          track plant.id
+        ) {
+          <mat-option [value]="plant.id">
+            {{ plant.code }} · {{ plant.name }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Clasificación</mat-label>
+
+      <mat-icon matPrefix>
+        filter_alt
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedFilter()"
+        (selectionChange)="
+          selectedFilter.set($event.value)
+        "
+      >
+        <mat-option value="all">
+          Todos
+        </mat-option>
+
+        <mat-option value="current">
+          Vigentes
+        </mat-option>
+
+        <mat-option value="general">
+          Generales
+        </mat-option>
+
+        <mat-option value="shift">
+          Específicos por turno
+        </mat-option>
+
+        <mat-option value="scheduled">
+          Programados
+        </mat-option>
+
+        <mat-option value="history">
+          Históricos
+        </mat-option>
+
+        <mat-option value="inactive">
+          Inactivos
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar listado"
+      [disabled]="isLoading()"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (isLoading()) {
+    <div class="state-container">
+      <mat-spinner diameter="42"></mat-spinner>
+
+      <span>
+        Cargando objetivos IPD...
+      </span>
+    </div>
+  } @else if (
+    targetsService.errorMessage()
+  ) {
+    <div class="state-container">
+      <mat-icon>error_outline</mat-icon>
+
+      <h3>
+        No fue posible cargar los objetivos
+      </h3>
+
+      <p>
+        {{ targetsService.errorMessage() }}
+      </p>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="reload()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Volver a intentar
+      </button>
+    </div>
+  } @else if (
+    filteredTargets().length === 0
+  ) {
+    <div class="state-container">
+      <mat-icon>track_changes</mat-icon>
+
+      <h3>
+        No se encontraron objetivos IPD
+      </h3>
+
+      <p>
+        Cambia los filtros o agrega el primer
+        objetivo para una línea.
+      </p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table
+        mat-table
+        [dataSource]="filteredTargets()"
+      >
+        <ng-container matColumnDef="plant">
+          <th mat-header-cell *matHeaderCellDef>
+            Planta
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            <span class="plant-badge">
+              {{ target.plantCode }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="line">
+          <th mat-header-cell *matHeaderCellDef>
+            Línea
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            <strong>
+              {{ target.productionLineName }}
+            </strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="model">
+          <th mat-header-cell *matHeaderCellDef>
+            Modelo
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            <div class="related-value">
+              <strong>
+                {{ target.productModelName }}
+              </strong>
+
+              @if (target.modelYear) {
+                <span>
+                  Año {{ target.modelYear }}
+                </span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="scope">
+          <th mat-header-cell *matHeaderCellDef>
+            Aplicación
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            @if (target.isGeneralTarget) {
+              <div class="scope-value">
+                <mat-icon>public</mat-icon>
+
+                <div>
+                  <strong>General</strong>
+                  <span>Todos los turnos</span>
+                </div>
+              </div>
+            } @else {
+              <div class="scope-value">
+                <mat-icon>schedule</mat-icon>
+
+                <div>
+                  <strong>
+                    {{ target.shiftCode }}
+                  </strong>
+
+                  <span>
+                    {{ target.shiftName }}
+                  </span>
+                </div>
+              </div>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="target">
+          <th mat-header-cell *matHeaderCellDef>
+            Target
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            <span class="target-badge">
+              {{
+                target.targetPercentage
+                  | number:'1.2-4'
+              }}
+              %
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="period">
+          <th mat-header-cell *matHeaderCellDef>
+            Vigencia
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            <div class="period-value">
+              <span>
+                {{
+                  target.effectiveFrom
+                    | date:'dd/MM/yyyy':'UTC'
+                }}
+              </span>
+
+              <mat-icon>arrow_forward</mat-icon>
+
+              <span>
+                {{
+                  target.effectiveTo
+                    ? (
+                        target.effectiveTo
+                        | date:'dd/MM/yyyy':'UTC'
+                      )
+                    : 'Indefinida'
+                }}
+              </span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            Estado
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            @if (target.isCurrent) {
+              <mat-chip class="current-chip">
+                Vigente
+              </mat-chip>
+            } @else if (!target.active) {
+              <mat-chip class="inactive-chip">
+                Inactivo
+              </mat-chip>
+            } @else {
+              <mat-chip class="history-chip">
+                Fuera de vigencia
+              </mat-chip>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="updatedAt">
+          <th mat-header-cell *matHeaderCellDef>
+            Actualización
+          </th>
+
+          <td mat-cell *matCellDef="let target">
+            {{
+              target.updatedAt
+                | date:'dd/MM/yyyy HH:mm'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let target"
+            class="actions-cell"
+          >
+            @if (canManage()) {
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="actionsMenu"
+                [matMenuTriggerData]="{
+                  target: target
+                }"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns"
+        ></tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          "
+          [class.inactive-row]="!row.active"
+        ></tr>
+      </table>
+    </div>
+  }
+</section>
+
+<mat-menu #actionsMenu="matMenu">
+  <ng-template
+    matMenuContent
+    let-target="target"
+  >
+    <button
+      mat-menu-item
+      type="button"
+      (click)="openEditDialog(target)"
+    >
+      <mat-icon>edit</mat-icon>
+      <span>Modificar</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="toggleTargetStatus(target)"
+    >
+      <mat-icon>
+        {{
+          target.active
+            ? 'pause_circle'
+            : 'play_circle'
+        }}
+      </mat-icon>
+
+      <span>
+        {{
+          target.active
+            ? 'Desactivar'
+            : 'Activar'
+        }}
+      </span>
+    </button>
+  </ng-template>
+</mat-menu>
