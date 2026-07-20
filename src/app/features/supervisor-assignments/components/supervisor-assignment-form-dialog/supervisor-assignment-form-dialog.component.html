@@ -1,0 +1,386 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar asignación'
+      : 'Agregar asignación'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="supervisor-assignment-form"
+    class="assignment-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    @if (isEditMode && data.assignment; as assignment) {
+      <section class="assignment-summary">
+        <div class="summary-avatar">
+          {{
+            initials(
+              assignment.supervisorName
+            )
+          }}
+        </div>
+
+        <div>
+          <span>Supervisor</span>
+
+          <strong>
+            {{ assignment.supervisorName }}
+          </strong>
+
+          <small>
+            {{ assignment.employeeNumber }}
+            ·
+            {{ assignment.plantCode }}
+          </small>
+        </div>
+
+        <div class="summary-line">
+          <span>Línea</span>
+
+          <strong>
+            {{ assignment.productionLineName }}
+          </strong>
+
+          <small>
+            {{ assignment.productModelName }}
+
+            @if (assignment.modelYear) {
+              · {{ assignment.modelYear }}
+            }
+          </small>
+        </div>
+      </section>
+    } @else {
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Planta</mat-label>
+
+          <mat-icon matPrefix>
+            factory
+          </mat-icon>
+
+          <mat-select
+            formControlName="plantId"
+            (selectionChange)="
+              handlePlantChange($event.value)
+            "
+          >
+            @for (
+              plant of availablePlants;
+              track plant.id
+            ) {
+              <mat-option [value]="plant.id">
+                {{ plant.code }} · {{ plant.name }}
+              </mat-option>
+            }
+          </mat-select>
+
+          @if (
+            form.controls.plantId.invalid
+            && form.controls.plantId.touched
+          ) {
+            <mat-error>
+              Selecciona una planta.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>
+            Buscar supervisor
+          </mat-label>
+
+          <mat-icon matPrefix>
+            person_search
+          </mat-icon>
+
+          <input
+            matInput
+            formControlName="employeeSearch"
+            placeholder="Número de reloj o nombre"
+            autocomplete="off"
+            [matAutocomplete]="employeeAutocomplete"
+            (input)="handleEmployeeSearch($event)"
+          />
+
+          @if (selectedCandidate()) {
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              aria-label="Quitar empleado"
+              (click)="clearSelectedCandidate()"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+          } @else if (isSearchingEmployees()) {
+            <mat-spinner
+              matSuffix
+              diameter="20"
+            ></mat-spinner>
+          }
+
+          <mat-hint>
+            Escribe al menos dos caracteres.
+          </mat-hint>
+
+          <mat-autocomplete
+            #employeeAutocomplete="matAutocomplete"
+            (optionSelected)="selectCandidate($event)"
+          >
+            @for (
+              candidate of candidates();
+              track candidate.id
+            ) {
+              <mat-option
+                [value]="candidate.employeeNumber"
+              >
+                <div class="candidate-option">
+                  <strong>
+                    {{ candidate.fullName }}
+                  </strong>
+
+                  <span>
+                    {{ candidate.employeeNumber }}
+                    ·
+                    {{ candidate.plantCode }}
+                  </span>
+                </div>
+              </mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+
+      @if (searchError()) {
+        <div class="inline-warning">
+          <mat-icon>info</mat-icon>
+          <span>{{ searchError() }}</span>
+        </div>
+      }
+
+      @if (selectedCandidate(); as employee) {
+        <section class="selected-employee">
+          <mat-icon>verified</mat-icon>
+
+          <div>
+            <span>Empleado seleccionado</span>
+
+            <strong>
+              {{ employee.fullName }}
+            </strong>
+
+            <small>
+              {{ employee.employeeNumber }}
+              ·
+              {{ employee.plantCode }}
+            </small>
+          </div>
+        </section>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>
+          Líneas asignadas
+        </mat-label>
+
+        <mat-icon matPrefix>
+          schema
+        </mat-icon>
+
+        <mat-select
+          formControlName="lineModelAssignmentIds"
+          multiple
+        >
+          @for (
+            line of availableLines();
+            track line.id
+          ) {
+            <mat-option
+              [value]="line.line_model_assignment_id"
+            >
+              {{ lineLabel(line) }}
+            </mat-option>
+          }
+        </mat-select>
+
+        <mat-hint>
+          Puedes seleccionar una o varias líneas.
+        </mat-hint>
+
+        @if (
+          form.controls
+            .lineModelAssignmentIds
+            .invalid
+          && form.controls
+            .lineModelAssignmentIds
+            .touched
+        ) {
+          <mat-error>
+            Selecciona al menos una línea.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      @if (
+        form.controls.plantId.value
+        && availableLines().length === 0
+      ) {
+        <div class="inline-warning">
+          <mat-icon>warning</mat-icon>
+
+          <span>
+            La planta no tiene líneas activas con
+            un modelo vigente.
+          </span>
+        </div>
+      }
+    }
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Turno</mat-label>
+
+        <mat-icon matPrefix>
+          schedule
+        </mat-icon>
+
+        <mat-select formControlName="shiftId">
+          @for (
+            shift of availableShifts;
+            track shift.id
+          ) {
+            <mat-option [value]="shift.id">
+              {{ shift.code }} · {{ shift.name }}
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (
+          form.controls.shiftId.invalid
+          && form.controls.shiftId.touched
+        ) {
+          <mat-error>
+            Selecciona un turno.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Inicio de vigencia</mat-label>
+
+        <mat-icon matPrefix>
+          event
+        </mat-icon>
+
+        <input
+          matInput
+          type="date"
+          formControlName="effectiveFrom"
+        />
+
+        @if (
+          form.controls.effectiveFrom.invalid
+          && form.controls.effectiveFrom.touched
+        ) {
+          <mat-error>
+            La fecha inicial es obligatoria.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>
+        Finalización de vigencia
+      </mat-label>
+
+      <mat-icon matPrefix>
+        event_busy
+      </mat-icon>
+
+      <input
+        matInput
+        type="date"
+        formControlName="effectiveTo"
+      />
+
+      <mat-hint>
+        Déjala vacía para una vigencia indefinida.
+      </mat-hint>
+
+      @if (
+        form.controls.effectiveTo.hasError(
+          'beforeStart'
+        )
+      ) {
+        <mat-error>
+          La fecha final no puede ser anterior
+          a la inicial.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    @if (isEditMode) {
+      <mat-slide-toggle
+        formControlName="active"
+      >
+        Asignación activa
+      </mat-slide-toggle>
+
+      <div class="information-note">
+        <mat-icon>info</mat-icon>
+
+        <span>
+          Para cambiar al supervisor o la línea,
+          desactiva esta asignación y crea una nueva.
+          Así se conserva el historial.
+        </span>
+      </div>
+    } @else {
+      <div class="information-note">
+        <mat-icon>info</mat-icon>
+
+        <span>
+          Cada línea seleccionada creará una
+          asignación independiente para el mismo
+          supervisor, turno y periodo.
+        </span>
+      </div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="supervisor-assignment-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'person_add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Crear asignaciones'
+    }}
+  </button>
+</mat-dialog-actions>

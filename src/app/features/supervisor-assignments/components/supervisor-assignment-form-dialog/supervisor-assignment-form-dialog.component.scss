@@ -1,0 +1,151 @@
+:host {
+  display: block;
+}
+
+.assignment-form {
+  width: min(100%, 720px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.75rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-dialog-content {
+  width: min(770px, calc(100vw - 32px));
+  max-height: 74dvh;
+}
+
+mat-dialog-actions {
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.assignment-summary,
+.selected-employee {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 16px;
+  background: var(--app-primary-soft);
+
+  span,
+  strong,
+  small {
+    display: block;
+  }
+
+  span,
+  small {
+    color: var(--app-text-muted);
+  }
+
+  span {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+  }
+
+  strong {
+    margin: 0.2rem 0;
+    color: var(--app-text);
+  }
+}
+
+.assignment-summary {
+  display: grid;
+  grid-template-columns:
+    auto minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.summary-avatar {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #ffffff;
+  background:
+    linear-gradient(
+      145deg,
+      #2f1e65,
+      #6752ad
+    );
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.summary-line {
+  padding-left: 1rem;
+  border-left: 1px solid var(--app-border);
+}
+
+.selected-employee {
+  mat-icon {
+    color: #13734a;
+  }
+}
+
+.candidate-option {
+  strong,
+  span {
+    display: block;
+  }
+
+  span {
+    color: var(--app-text-muted);
+    font-size: 0.75rem;
+  }
+}
+
+.inline-warning,
+.information-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  color: var(--app-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+
+  mat-icon {
+    flex-shrink: 0;
+    color: var(--app-primary);
+  }
+}
+
+.inline-warning {
+  margin-bottom: 1rem;
+  color: #8a5a00;
+  background: #fff5dd;
+}
+
+.information-note {
+  margin-top: 0.75rem;
+  background: var(--app-primary-soft);
+}
+
+@media (max-width: 680px) {
+  .form-grid,
+  .assignment-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-line {
+    padding: 0;
+    border-left: 0;
+  }
+}

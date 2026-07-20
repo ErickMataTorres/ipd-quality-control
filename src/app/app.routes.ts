@@ -171,20 +171,25 @@ export const routes: Routes = [
         component.EmployeesListComponent,
     ),
 },
-      {
-        path: 'supervisor-assignments',
-        title: 'Asignaciones · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: managementRoles,
-          pageTitle:
-            'Asignaciones de supervisores',
-          icon: 'assignment_ind',
-          description:
-            'Asignación de una o varias líneas y turnos a los supervisores de calidad.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'supervisor-assignments',
+  title: 'Asignaciones · IPD Quality',
+  canActivate: [roleGuard],
+
+  data: {
+    roles: managementRoles,
+    pageTitle: 'Asignaciones',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/supervisor-assignments/pages/supervisor-assignments-list/supervisor-assignments-list.component'
+    ).then(
+      component =>
+        component
+          .SupervisorAssignmentsListComponent,
+    ),
+},
       {
         path: 'ipd-targets',
         title: 'Objetivos IPD · IPD Quality',

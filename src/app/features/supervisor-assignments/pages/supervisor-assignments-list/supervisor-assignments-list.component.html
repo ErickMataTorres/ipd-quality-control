@@ -1,0 +1,491 @@
+<section class="page-header">
+  <div>
+    <span>Administración operativa</span>
+
+    <h2>Asignaciones</h2>
+
+    <p>
+      Relaciona supervisores con líneas, modelos,
+      turnos y periodos de vigencia.
+    </p>
+  </div>
+
+  @if (canManage()) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="isSaving()"
+      (click)="openCreateDialog()"
+    >
+      <mat-icon>person_add</mat-icon>
+      Agregar asignación
+    </button>
+  }
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>assignment_ind</mat-icon>
+    </div>
+
+    <div>
+      <span>Total histórico</span>
+      <strong>{{ totalAssignments() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>verified</mat-icon>
+    </div>
+
+    <div>
+      <span>Vigentes</span>
+      <strong>{{ currentAssignments() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon info">
+      <mat-icon>supervisor_account</mat-icon>
+    </div>
+
+    <div>
+      <span>Supervisores vigentes</span>
+      <strong>{{ assignedSupervisors() }}</strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon warning">
+      <mat-icon>schema</mat-icon>
+    </div>
+
+    <div>
+      <span>Líneas cubiertas</span>
+      <strong>{{ assignedLines() }}</strong>
+    </div>
+  </article>
+</section>
+
+<section class="table-card">
+  <header class="table-toolbar">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+      class="search-field"
+    >
+      <mat-label>Buscar asignación</mat-label>
+
+      <mat-icon matPrefix>
+        search
+      </mat-icon>
+
+      <input
+        matInput
+        [value]="searchTerm()"
+        placeholder="Supervisor, reloj, línea o modelo"
+        (input)="updateSearch($event)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Limpiar búsqueda"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Planta</mat-label>
+
+      <mat-icon matPrefix>
+        factory
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedPlantId()"
+        (selectionChange)="
+          selectedPlantId.set($event.value)
+        "
+      >
+        <mat-option value="all">
+          Todas las plantas
+        </mat-option>
+
+        @for (
+          plant of plantsService.plants();
+          track plant.id
+        ) {
+          <mat-option [value]="plant.id">
+            {{ plant.code }} · {{ plant.name }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Periodo</mat-label>
+
+      <mat-icon matPrefix>
+        filter_alt
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedFilter()"
+        (selectionChange)="
+          selectedFilter.set($event.value)
+        "
+      >
+        <mat-option value="all">
+          Todas
+        </mat-option>
+
+        <mat-option value="current">
+          Vigentes
+        </mat-option>
+
+        <mat-option value="scheduled">
+          Programadas
+        </mat-option>
+
+        <mat-option value="history">
+          Históricas
+        </mat-option>
+
+        <mat-option value="inactive">
+          Inactivas
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar listado"
+      [disabled]="isLoading()"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (isLoading()) {
+    <div class="state-container">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Cargando asignaciones...</span>
+    </div>
+  } @else if (
+    assignmentsService.errorMessage()
+  ) {
+    <div class="state-container">
+      <mat-icon>error_outline</mat-icon>
+
+      <h3>
+        No fue posible cargar las asignaciones
+      </h3>
+
+      <p>
+        {{ assignmentsService.errorMessage() }}
+      </p>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="reload()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Volver a intentar
+      </button>
+    </div>
+  } @else if (
+    filteredAssignments().length === 0
+  ) {
+    <div class="state-container">
+      <mat-icon>assignment_ind</mat-icon>
+
+      <h3>No se encontraron asignaciones</h3>
+
+      <p>
+        Cambia los filtros o agrega la primera
+        asignación.
+      </p>
+    </div>
+  } @else {
+    <div class="table-container">
+      <table
+        mat-table
+        [dataSource]="filteredAssignments()"
+      >
+        <ng-container matColumnDef="supervisor">
+          <th mat-header-cell *matHeaderCellDef>
+            Supervisor
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            <div class="supervisor-value">
+              <div class="avatar">
+                {{
+                  initials(
+                    assignment.supervisorName
+                  )
+                }}
+              </div>
+
+              <div>
+                <strong>
+                  {{ assignment.supervisorName }}
+                </strong>
+
+                <span>
+                  {{ assignment.employeeNumber }}
+                </span>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="plant">
+          <th mat-header-cell *matHeaderCellDef>
+            Planta
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            <span class="plant-badge">
+              {{ assignment.plantCode }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="line">
+          <th mat-header-cell *matHeaderCellDef>
+            Línea
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            <strong>
+              {{ assignment.productionLineName }}
+            </strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="model">
+          <th mat-header-cell *matHeaderCellDef>
+            Modelo
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            <div class="related-value">
+              <strong>
+                {{ assignment.productModelName }}
+              </strong>
+
+              @if (assignment.modelYear) {
+                <span>
+                  Año {{ assignment.modelYear }}
+                </span>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="shift">
+          <th mat-header-cell *matHeaderCellDef>
+            Turno
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            <div class="related-value">
+              <strong>
+                {{ assignment.shiftCode }}
+              </strong>
+
+              <span>
+                {{ assignment.shiftName }}
+              </span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="period">
+          <th mat-header-cell *matHeaderCellDef>
+            Vigencia
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            <div class="period-value">
+              <span>
+                {{
+                  assignment.effectiveFrom
+                    | date:'dd/MM/yyyy':'UTC'
+                }}
+              </span>
+
+              <mat-icon>arrow_forward</mat-icon>
+
+              <span>
+                {{
+                  assignment.effectiveTo
+                    ? (
+                        assignment.effectiveTo
+                        | date:'dd/MM/yyyy':'UTC'
+                      )
+                    : 'Indefinida'
+                }}
+              </span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            Estado
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            @if (assignment.isCurrent) {
+              <mat-chip class="current-chip">
+                Vigente
+              </mat-chip>
+            } @else if (!assignment.active) {
+              <mat-chip class="inactive-chip">
+                Inactiva
+              </mat-chip>
+            } @else {
+              <mat-chip class="history-chip">
+                Fuera de vigencia
+              </mat-chip>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="updatedAt">
+          <th mat-header-cell *matHeaderCellDef>
+            Actualización
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+          >
+            {{
+              assignment.updatedAt
+                | date:'dd/MM/yyyy HH:mm'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let assignment"
+            class="actions-cell"
+          >
+            @if (canManage()) {
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="actionsMenu"
+                [matMenuTriggerData]="{
+                  assignment: assignment
+                }"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns"
+        ></tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          "
+          [class.inactive-row]="!row.active"
+        ></tr>
+      </table>
+    </div>
+  }
+</section>
+
+<mat-menu #actionsMenu="matMenu">
+  <ng-template
+    matMenuContent
+    let-assignment="assignment"
+  >
+    <button
+      mat-menu-item
+      type="button"
+      (click)="openEditDialog(assignment)"
+    >
+      <mat-icon>edit</mat-icon>
+      <span>Modificar</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="
+        toggleAssignmentStatus(assignment)
+      "
+    >
+      <mat-icon>
+        {{
+          assignment.active
+            ? 'pause_circle'
+            : 'play_circle'
+        }}
+      </mat-icon>
+
+      <span>
+        {{
+          assignment.active
+            ? 'Desactivar'
+            : 'Activar'
+        }}
+      </span>
+    </button>
+  </ng-template>
+</mat-menu>
