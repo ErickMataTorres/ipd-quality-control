@@ -1,0 +1,480 @@
+<section class="page-header">
+  <div>
+    <span>Operación diaria</span>
+
+    <h2>Registros diarios</h2>
+
+    <p>
+      Captura la producción y los defectos de cada
+      línea para calcular automáticamente el IPD.
+    </p>
+  </div>
+
+  <div class="live-indicator">
+    <span class="live-dot"></span>
+    Actualización en tiempo real
+  </div>
+</section>
+
+<section class="filters-card">
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Planta</mat-label>
+
+    <mat-icon matPrefix>
+      factory
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPlantId()"
+      (selectionChange)="
+        selectedPlantId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      @for (
+        plant of plantsService.plants();
+        track plant.id
+      ) {
+        <mat-option [value]="plant.id">
+          {{ plant.code }} · {{ plant.name }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Turno</mat-label>
+
+    <mat-icon matPrefix>
+      schedule
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedShiftId()"
+      (selectionChange)="
+        selectedShiftId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      @for (
+        shift of shiftsService.shifts();
+        track shift.id
+      ) {
+        <mat-option [value]="shift.id">
+          {{ shift.code }} · {{ shift.name }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Fecha</mat-label>
+
+    <mat-icon matPrefix>
+      calendar_today
+    </mat-icon>
+
+    <input
+      matInput
+      type="date"
+      [value]="selectedDate()"
+      (change)="
+        selectedDate.set(
+          $any($event.target).value
+        );
+        handleFilterChange()
+      "
+    />
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+    class="search-field"
+  >
+    <mat-label>Buscar línea</mat-label>
+
+    <mat-icon matPrefix>
+      search
+    </mat-icon>
+
+    <input
+      matInput
+      [value]="searchTerm()"
+      placeholder="Línea, modelo o supervisor"
+      (input)="updateSearch($event)"
+    />
+
+    @if (searchTerm()) {
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Limpiar búsqueda"
+        (click)="clearSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Actualizar"
+    [disabled]="isLoading()"
+    (click)="reload()"
+  >
+    <mat-icon>refresh</mat-icon>
+  </button>
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>schema</mat-icon>
+    </div>
+
+    <div>
+      <span>Líneas visibles</span>
+
+      <strong>
+        {{ entriesService.board().length }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>task_alt</mat-icon>
+    </div>
+
+    <div>
+      <span>Registros completos</span>
+
+      <strong>
+        {{ completedLines() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon warning">
+      <mat-icon>pending_actions</mat-icon>
+    </div>
+
+    <div>
+      <span>Líneas pendientes</span>
+
+      <strong>
+        {{ pendingLines() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon info">
+      <mat-icon>percent</mat-icon>
+    </div>
+
+    <div>
+      <span>IPD acumulado</span>
+
+      <strong>
+        @if (dailyIpd() !== null) {
+          {{
+            dailyIpd()
+              | number:'1.2-4'
+          }}
+          %
+        } @else {
+          —
+        }
+      </strong>
+    </div>
+  </article>
+</section>
+
+@if (isLoading()) {
+  <section class="state-container">
+    <mat-spinner diameter="44"></mat-spinner>
+
+    <span>
+      Cargando líneas y registros...
+    </span>
+  </section>
+} @else if (
+  entriesService.errorMessage()
+) {
+  <section class="state-container">
+    <mat-icon>error_outline</mat-icon>
+
+    <h3>
+      No fue posible cargar los registros
+    </h3>
+
+    <p>
+      {{ entriesService.errorMessage() }}
+    </p>
+
+    <button
+      mat-flat-button
+      type="button"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Volver a intentar
+    </button>
+  </section>
+} @else if (
+  filteredBoard().length === 0
+) {
+  <section class="state-container">
+    <mat-icon>schema</mat-icon>
+
+    <h3>
+      No hay líneas disponibles
+    </h3>
+
+    <p>
+      Revisa la planta, el turno, la fecha,
+      las asignaciones y los modelos vigentes.
+    </p>
+  </section>
+} @else {
+  <section class="lines-grid">
+    @for (
+      item of filteredBoard();
+      track item.lineModelAssignmentId
+    ) {
+      <button
+        class="line-card"
+        type="button"
+        [class.with-record]="
+          item.recordId !== null
+        "
+        [class.within-target]="
+          item.isWithinTarget === true
+        "
+        [class.outside-target]="
+          item.isWithinTarget === false
+        "
+        [class.closed]="
+          item.status === 'closed'
+        "
+        (click)="openRecordDialog(item)"
+      >
+        <header>
+          <div>
+            <span class="plant-code">
+              {{ item.plantCode }}
+            </span>
+
+            <h3>
+              {{ item.productionLineName }}
+            </h3>
+
+            <p>
+              {{ item.productModelName }}
+
+              @if (item.modelYear) {
+                · {{ item.modelYear }}
+              }
+            </p>
+          </div>
+
+          <mat-chip
+            [class.pending-chip]="
+              item.recordId === null
+            "
+            [class.draft-chip]="
+              item.status === 'draft'
+            "
+            [class.submitted-chip]="
+              item.status === 'submitted'
+            "
+            [class.closed-chip]="
+              item.status === 'closed'
+            "
+            [class.no-production-chip]="
+              item.status === 'no_production'
+            "
+          >
+            <mat-icon>
+              {{ statusIcon(item) }}
+            </mat-icon>
+
+            {{ statusLabel(item) }}
+          </mat-chip>
+        </header>
+
+        <section class="supervisor-section">
+          @if (item.supervisorName) {
+            <div class="avatar">
+              {{
+                initials(item.supervisorName)
+              }}
+            </div>
+
+            <div>
+              <span>
+                Supervisor responsable
+              </span>
+
+              <strong>
+                {{ item.supervisorName }}
+              </strong>
+
+              <small>
+                {{
+                  item.supervisorEmployeeNumber
+                }}
+              </small>
+            </div>
+          } @else if (
+            primaryAssignedSupervisor(item);
+            as assignedSupervisor
+          ) {
+            <div class="avatar">
+              {{
+                initials(
+                  assignedSupervisor.fullName
+                )
+              }}
+            </div>
+
+            <div>
+              <span>
+                Supervisor asignado
+              </span>
+
+              <strong>
+                {{ assignedSupervisor.fullName }}
+              </strong>
+
+              @if (
+                item.assignedSupervisors.length > 1
+              ) {
+                <small>
+                  +{{
+                    item.assignedSupervisors
+                      .length - 1
+                  }}
+                  adicional
+                </small>
+              }
+            </div>
+          } @else {
+            <mat-icon>person_off</mat-icon>
+
+            <div>
+              <span>Responsable</span>
+
+              <strong>
+                Sin supervisor asignado
+              </strong>
+            </div>
+          }
+        </section>
+
+        <section class="metrics-grid">
+          <article>
+            <span>Producción</span>
+
+            <strong>
+              {{
+                item.producedQuantity
+                  ?? 0
+              }}
+            </strong>
+          </article>
+
+          <article>
+            <span>Defectos</span>
+
+            <strong>
+              {{
+                item.totalDefects
+                  ?? 0
+              }}
+            </strong>
+          </article>
+
+          <article>
+            <span>IPD</span>
+
+            <strong>
+              @if (
+                item.ipdPercentage !== null
+              ) {
+                {{
+                  item.ipdPercentage
+                    | number:'1.2-4'
+                }}
+                %
+              } @else {
+                —
+              }
+            </strong>
+          </article>
+
+          <article>
+            <span>Target</span>
+
+            <strong>
+              @if (
+                effectiveTarget(item) !== null
+              ) {
+                {{
+                  effectiveTarget(item)
+                    | number:'1.2-4'
+                }}
+                %
+              } @else {
+                —
+              }
+            </strong>
+          </article>
+        </section>
+
+        <footer>
+          <div>
+            <span>IPD mensual</span>
+
+            <strong>
+              @if (
+                item.monthlyIpdPercentage
+                !== null
+              ) {
+                {{
+                  item.monthlyIpdPercentage
+                    | number:'1.2-4'
+                }}
+                %
+              } @else {
+                Sin registros
+              }
+            </strong>
+          </div>
+
+          <mat-icon>
+            {{
+              item.recordId
+                ? 'edit'
+                : 'add_circle'
+            }}
+          </mat-icon>
+        </footer>
+      </button>
+    }
+  </section>
+}

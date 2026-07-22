@@ -1195,14 +1195,59 @@ export type Database = {
       }
     }
     Views: {
-      daily_ipd_overview: {
+      daily_ipd_defect_overview: {
         Row: {
           comment: string | null
           created_at: string | null
+          daily_ipd_record_id: string | null
+          defect_category: string | null
+          defect_type_code: string | null
+          defect_type_id: string | null
+          defect_type_name: string | null
+          display_order: number | null
+          id: string | null
+          quantity: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_ipd_defects_daily_ipd_record_id_fkey"
+            columns: ["daily_ipd_record_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_ipd_defects_daily_ipd_record_id_fkey"
+            columns: ["daily_ipd_record_id"]
+            isOneToOne: false
+            referencedRelation: "daily_ipd_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_ipd_defects_defect_type_id_fkey"
+            columns: ["defect_type_id"]
+            isOneToOne: false
+            referencedRelation: "defect_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_ipd_overview: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          comment: string | null
+          created_at: string | null
+          defect_type_count: number | null
           defective_harness_quantity: number | null
+          display_order: number | null
           id: string | null
           ipd_percentage: number | null
+          is_within_target: boolean | null
+          line_model_assignment_id: string | null
           model_year: number | null
+          modification_reason: string | null
           plant_code: string | null
           plant_id: string | null
           plant_name: string | null
@@ -1216,16 +1261,49 @@ export type Database = {
           shift_id: string | null
           shift_name: string | null
           status: Database["public"]["Enums"]["ipd_record_status"] | null
+          submitted_at: string | null
+          submitted_by: string | null
           supervisor_employee_id: string | null
           supervisor_employee_number: string | null
           supervisor_name: string | null
+          supervisor_photo_path: string | null
           target_difference: number | null
+          target_id: string | null
           target_percentage: number | null
           total_defects: number | null
           updated_at: string | null
           version: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_ipd_records_line_model_assignment_id_fkey"
+            columns: ["line_model_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "line_model_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_ipd_records_line_model_assignment_id_fkey"
+            columns: ["line_model_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "production_line_overview"
+            referencedColumns: ["line_model_assignment_id"]
+          },
+          {
+            foreignKeyName: "daily_ipd_records_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "ipd_target_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_ipd_records_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "ipd_targets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ipd_target_overview: {
         Row: {
@@ -1533,6 +1611,50 @@ export type Database = {
         }
         Returns: number
       }
+      get_daily_operation_board: {
+        Args: {
+          plant_id_value: string
+          production_date_value: string
+          shift_id_value: string
+        }
+        Returns: {
+          assigned_supervisors: Json
+          comment: string
+          current_user_is_assigned: boolean
+          defective_harness_quantity: number
+          display_order: number
+          ipd_percentage: number
+          is_within_target: boolean
+          line_model_assignment_id: string
+          model_year: number
+          monthly_ipd_percentage: number
+          monthly_produced_quantity: number
+          monthly_record_count: number
+          monthly_total_defects: number
+          plant_code: string
+          plant_id: string
+          plant_name: string
+          produced_quantity: number
+          product_model_id: string
+          product_model_name: string
+          production_line_id: string
+          production_line_name: string
+          record_id: string
+          record_target_percentage: number
+          shift_code: string
+          shift_id: string
+          shift_name: string
+          status: Database["public"]["Enums"]["ipd_record_status"]
+          supervisor_employee_id: string
+          supervisor_employee_number: string
+          supervisor_name: string
+          target_id: string
+          target_percentage: number
+          total_defects: number
+          updated_at: string
+          version: number
+        }[]
+      }
       import_employee_batch: {
         Args: { rows_value: Json }
         Returns: {
@@ -1547,6 +1669,31 @@ export type Database = {
       refresh_daily_ipd_record_total: {
         Args: { target_record_id: string }
         Returns: undefined
+      }
+      review_daily_ipd_record: {
+        Args: {
+          expected_version_value: number
+          modification_reason_value: string
+          record_id_value: string
+          requested_status_value: Database["public"]["Enums"]["ipd_record_status"]
+        }
+        Returns: undefined
+      }
+      save_daily_ipd_record: {
+        Args: {
+          comment_value: string
+          defective_harness_quantity_value: number
+          defects_value: Json
+          expected_version_value: number
+          line_model_assignment_id_value: string
+          produced_quantity_value: number
+          production_date_value: string
+          record_id_value: string
+          shift_id_value: string
+          status_value: Database["public"]["Enums"]["ipd_record_status"]
+          supervisor_employee_id_value: string
+        }
+        Returns: string
       }
       save_ipd_target: {
         Args: {

@@ -1,0 +1,416 @@
+<h2 mat-dialog-title>
+  Registro diario de IPD
+</h2>
+
+<mat-dialog-content>
+  @if (isLoading()) {
+    <section class="loading-state">
+      <mat-spinner diameter="44"></mat-spinner>
+
+      <span>
+        Cargando detalle del registro...
+      </span>
+    </section>
+  } @else {
+    <form
+      id="daily-ipd-record-form"
+      class="record-form"
+      [formGroup]="form"
+    >
+      <section class="line-summary">
+        <div class="line-icon">
+          <mat-icon>schema</mat-icon>
+        </div>
+
+        <div>
+          <span>Línea y modelo</span>
+
+          <strong>
+            {{ data.item.productionLineName }}
+          </strong>
+
+          <small>
+            {{ data.item.productModelName }}
+
+            @if (data.item.modelYear) {
+              · {{ data.item.modelYear }}
+            }
+          </small>
+        </div>
+
+        <div>
+          <span>Fecha y turno</span>
+
+          <strong>
+            {{ data.productionDate }}
+          </strong>
+
+          <small>
+            {{ data.item.shiftCode }}
+            ·
+            {{ data.item.shiftName }}
+          </small>
+        </div>
+      </section>
+
+      @if (
+        data.item.assignedSupervisors.length
+        === 0
+      ) {
+        <div class="warning-note">
+          <mat-icon>warning</mat-icon>
+
+          <span>
+            Esta línea no tiene un supervisor
+            asignado para la fecha y turno
+            seleccionados.
+          </span>
+        </div>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>
+          Supervisor responsable
+        </mat-label>
+
+        <mat-icon matPrefix>
+          supervisor_account
+        </mat-icon>
+
+        <mat-select
+          formControlName="supervisorEmployeeId"
+          [disabled]="
+            data.item.recordId !== null
+          "
+        >
+          @for (
+            supervisor of
+              data.item.assignedSupervisors;
+            track supervisor.employeeId
+          ) {
+            <mat-option
+              [value]="supervisor.employeeId"
+            >
+              {{ supervisor.fullName }}
+              ·
+              {{ supervisor.employeeNumber }}
+            </mat-option>
+          }
+        </mat-select>
+
+        @if (
+          form.controls
+            .supervisorEmployeeId
+            .invalid
+          && form.controls
+            .supervisorEmployeeId
+            .touched
+        ) {
+          <mat-error>
+            Selecciona al supervisor responsable.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <div class="quantity-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>
+            Arneses producidos
+          </mat-label>
+
+          <mat-icon matPrefix>
+            precision_manufacturing
+          </mat-icon>
+
+          <input
+            matInput
+            type="number"
+            min="0"
+            step="1"
+            formControlName="producedQuantity"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>
+            Arneses defectuosos
+          </mat-label>
+
+          <mat-icon matPrefix>
+            report_problem
+          </mat-icon>
+
+          <input
+            matInput
+            type="number"
+            min="0"
+            step="1"
+            formControlName="defectiveHarnessQuantity"
+          />
+        </mat-form-field>
+      </div>
+
+      <section class="calculation-grid">
+        <article>
+          <span>Total de defectos</span>
+
+          <strong>
+            {{ totalDefects }}
+          </strong>
+        </article>
+
+        <article>
+          <span>IPD calculado</span>
+
+          <strong>
+            @if (previewIpd !== null) {
+              {{ previewIpd }} %
+            } @else {
+              —
+            }
+          </strong>
+        </article>
+
+        <article>
+          <span>Objetivo aplicable</span>
+
+          <strong>
+            @if (effectiveTarget !== null) {
+              {{ effectiveTarget }} %
+            } @else {
+              Sin target
+            }
+          </strong>
+        </article>
+
+        <article
+          [class.success]="
+            previewIsWithinTarget === true
+          "
+          [class.danger]="
+            previewIsWithinTarget === false
+          "
+        >
+          <span>Cumplimiento</span>
+
+          <strong>
+            @if (
+              previewIsWithinTarget === true
+            ) {
+              Dentro del objetivo
+            } @else if (
+              previewIsWithinTarget === false
+            ) {
+              Fuera del objetivo
+            } @else {
+              Pendiente
+            }
+          </strong>
+        </article>
+      </section>
+
+      <section class="defects-section">
+        <header>
+          <div>
+            <span>Detalle de defectos</span>
+
+            <h3>
+              Tipos de defecto encontrados
+            </h3>
+          </div>
+
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="
+              defects.length
+              >= data.defectTypes.length
+            "
+            (click)="addDefect()"
+          >
+            <mat-icon>add</mat-icon>
+            Agregar defecto
+          </button>
+        </header>
+
+        @if (defects.length === 0) {
+          <div class="empty-defects">
+            <mat-icon>verified</mat-icon>
+
+            <span>
+              No se han agregado defectos.
+            </span>
+          </div>
+        }
+
+        <div
+          class="defect-list"
+          formArrayName="defects"
+        >
+          @for (
+            defectControl of defects.controls;
+            track $index;
+            let defectIndex = $index
+          ) {
+            <section
+              class="defect-row"
+              [formGroupName]="defectIndex"
+            >
+              <mat-form-field
+                appearance="outline"
+              >
+                <mat-label>
+                  Tipo de defecto
+                </mat-label>
+
+                <mat-select
+                  formControlName="defectTypeId"
+                >
+                  @for (
+                    defectType of
+                      availableDefectTypes(
+                        defectIndex
+                      );
+                    track defectType.id
+                  ) {
+                    <mat-option
+                      [value]="defectType.id"
+                    >
+                      {{ defectType.name }}
+                      ·
+                      {{ defectType.code }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field
+                appearance="outline"
+              >
+                <mat-label>Cantidad</mat-label>
+
+                <input
+                  matInput
+                  type="number"
+                  min="1"
+                  step="1"
+                  formControlName="quantity"
+                />
+              </mat-form-field>
+
+              <mat-form-field
+                appearance="outline"
+              >
+                <mat-label>
+                  Comentario del defecto
+                </mat-label>
+
+                <input
+                  matInput
+                  formControlName="comment"
+                  placeholder="Opcional"
+                />
+              </mat-form-field>
+
+              <button
+                mat-icon-button
+                type="button"
+                aria-label="Eliminar defecto"
+                (click)="
+                  removeDefect(defectIndex)
+                "
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </section>
+          }
+        </div>
+      </section>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Comentario general</mat-label>
+
+        <textarea
+          matInput
+          rows="3"
+          formControlName="comment"
+          placeholder="Observaciones opcionales del registro"
+        ></textarea>
+
+        <mat-hint align="end">
+          {{
+            form.controls.comment.value.length
+          }}/2000
+        </mat-hint>
+      </mat-form-field>
+
+      @if (errorMessage()) {
+        <div class="error-note">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+    </form>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    [disabled]="isSaving()"
+    (click)="close()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    [disabled]="
+      isSaving()
+      || isLoading()
+      || data.item.assignedSupervisors
+        .length === 0
+    "
+    (click)="saveNoProduction()"
+  >
+    <mat-icon>block</mat-icon>
+    Sin producción
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    [disabled]="
+      isSaving()
+      || isLoading()
+      || form.invalid
+    "
+    (click)="saveDraft()"
+  >
+    <mat-icon>save</mat-icon>
+    Guardar borrador
+  </button>
+
+  <button
+    mat-flat-button
+    type="button"
+    [disabled]="
+      isSaving()
+      || isLoading()
+      || form.invalid
+    "
+    (click)="submitRecord()"
+  >
+    @if (isSaving()) {
+      <mat-spinner
+        diameter="18"
+      ></mat-spinner>
+    } @else {
+      <mat-icon>send</mat-icon>
+    }
+
+    Enviar registro
+  </button>
+</mat-dialog-actions>

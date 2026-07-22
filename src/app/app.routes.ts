@@ -105,20 +105,24 @@ export const routes: Routes = [
         },
         loadComponent: loadPlaceholder,
       },
-      {
-        path: 'daily-entries',
-        title:
-          'Registros diarios · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: captureRoles,
-          pageTitle: 'Registros diarios',
-          icon: 'edit_note',
-          description:
-            'Captura diaria de producción, arneses defectuosos y defectos por tipo.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'daily-entries',
+  title: 'Registros diarios · IPD Quality',
+  canActivate: [roleGuard],
+
+  data: {
+    roles: captureRoles,
+    pageTitle: 'Registros diarios',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/daily-entries/pages/daily-entries-list/daily-entries-list.component'
+    ).then(
+      component =>
+        component.DailyEntriesListComponent,
+    ),
+},
       {
         path: 'line-performance',
         title:
