@@ -2021,6 +2021,164 @@ export type Database = {
           version: number
         }[]
       }
+      get_reports_by_line: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          line_model_assignment_id_value?: string
+          plant_id_value: string
+          shift_id_value?: string
+          status_value?: Database["public"]["Enums"]["ipd_record_status"]
+        }
+        Returns: {
+          compliance_percentage: number
+          defective_harness_quantity: number
+          display_order: number
+          ipd_percentage: number
+          line_model_assignment_id: string
+          model_year: number
+          outside_target_records: number
+          produced_quantity: number
+          product_model_id: string
+          product_model_name: string
+          production_line_id: string
+          production_line_name: string
+          total_defects: number
+          total_records: number
+          weighted_target_percentage: number
+          within_target_records: number
+        }[]
+      }
+      get_reports_daily: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          line_model_assignment_id_value?: string
+          plant_id_value: string
+          shift_id_value?: string
+          status_value?: Database["public"]["Enums"]["ipd_record_status"]
+        }
+        Returns: {
+          defective_harness_quantity: number
+          ipd_percentage: number
+          no_production_records: number
+          outside_target_records: number
+          produced_quantity: number
+          production_date: string
+          total_defects: number
+          total_records: number
+          within_target_records: number
+        }[]
+      }
+      get_reports_defects: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          defect_type_id_value?: string
+          line_model_assignment_id_value?: string
+          plant_id_value: string
+          row_limit_value?: number
+          shift_id_value?: string
+          status_value?: Database["public"]["Enums"]["ipd_record_status"]
+        }
+        Returns: {
+          created_at: string
+          defect_category: string
+          defect_comment: string
+          defect_type_code: string
+          defect_type_id: string
+          defect_type_name: string
+          defective_harness_quantity: number
+          detail_id: string
+          ipd_percentage: number
+          model_year: number
+          plant_code: string
+          plant_name: string
+          produced_quantity: number
+          product_model_name: string
+          production_date: string
+          production_line_name: string
+          quantity: number
+          record_comment: string
+          record_id: string
+          record_status: Database["public"]["Enums"]["ipd_record_status"]
+          record_total_defects: number
+          shift_code: string
+          shift_name: string
+          supervisor_employee_number: string
+          supervisor_name: string
+          target_percentage: number
+          updated_at: string
+        }[]
+      }
+      get_reports_records: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          line_model_assignment_id_value?: string
+          plant_id_value: string
+          row_limit_value?: number
+          shift_id_value?: string
+          status_value?: Database["public"]["Enums"]["ipd_record_status"]
+        }
+        Returns: {
+          created_at: string
+          defective_harness_quantity: number
+          ipd_percentage: number
+          is_within_target: boolean
+          line_model_assignment_id: string
+          model_year: number
+          plant_code: string
+          plant_id: string
+          plant_name: string
+          produced_quantity: number
+          product_model_id: string
+          product_model_name: string
+          production_date: string
+          production_line_id: string
+          production_line_name: string
+          record_comment: string
+          record_id: string
+          shift_code: string
+          shift_id: string
+          shift_name: string
+          status: Database["public"]["Enums"]["ipd_record_status"]
+          supervisor_employee_id: string
+          supervisor_employee_number: string
+          supervisor_name: string
+          target_difference: number
+          target_percentage: number
+          total_defects: number
+          updated_at: string
+        }[]
+      }
+      get_reports_summary: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          line_model_assignment_id_value?: string
+          plant_id_value: string
+          shift_id_value?: string
+          status_value?: Database["public"]["Enums"]["ipd_record_status"]
+        }
+        Returns: {
+          closed_records: number
+          defective_harness_percentage: number
+          defective_harness_quantity: number
+          draft_records: number
+          first_record_date: string
+          ipd_percentage: number
+          last_record_date: string
+          no_production_records: number
+          outside_target_records: number
+          produced_quantity: number
+          records_without_target: number
+          submitted_records: number
+          total_defects: number
+          total_records: number
+          within_target_records: number
+        }[]
+      }
       import_employee_batch: {
         Args: { rows_value: Json }
         Returns: {

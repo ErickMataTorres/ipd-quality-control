@@ -1,0 +1,1094 @@
+<section class="page-header">
+  <div>
+    <span>Consulta y exportación</span>
+
+    <h2>Reportes</h2>
+
+    <p>
+      Genera reportes consolidados de producción,
+      defectos, IPD y cumplimiento.
+    </p>
+  </div>
+
+  <div class="header-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="
+        isLoading()
+        || reportsService.isExporting()
+      "
+      (click)="printReport()"
+    >
+      <mat-icon>print</mat-icon>
+      Imprimir / PDF
+    </button>
+
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="
+        isLoading()
+        || reportsService.isExporting()
+      "
+      (click)="exportDefectsCsv()"
+    >
+      <mat-icon>bug_report</mat-icon>
+      CSV defectos
+    </button>
+
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="
+        isLoading()
+        || reportsService.isExporting()
+      "
+      (click)="exportRecordsCsv()"
+    >
+      @if (
+        reportsService.isExporting()
+      ) {
+        <mat-spinner diameter="18"></mat-spinner>
+      } @else {
+        <mat-icon>download</mat-icon>
+      }
+
+      CSV registros
+    </button>
+  </div>
+</section>
+
+<section class="filters-card">
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Planta</mat-label>
+
+    <mat-icon matPrefix>
+      factory
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPlantId()"
+      (selectionChange)="
+        handlePlantChange($event.value)
+      "
+    >
+      @for (
+        plant of plantsService.plants();
+        track plant.id
+      ) {
+        @if (plant.active) {
+          <mat-option [value]="plant.id">
+            {{ plant.code }} · {{ plant.name }}
+          </mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Turno</mat-label>
+
+    <mat-icon matPrefix>
+      schedule
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedShiftId()"
+      (selectionChange)="
+        selectedShiftId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todos los turnos
+      </mat-option>
+
+      @for (
+        shift of shiftsService.shifts();
+        track shift.id
+      ) {
+        @if (shift.active) {
+          <mat-option [value]="shift.id">
+            {{ shift.code }} · {{ shift.name }}
+          </mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Línea y modelo</mat-label>
+
+    <mat-icon matPrefix>
+      account_tree
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedLineId()"
+      (selectionChange)="
+        selectedLineId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todas las líneas
+      </mat-option>
+
+      @for (
+        line of reportsService.lineOptions();
+        track line.id
+      ) {
+        <mat-option [value]="line.id">
+          {{ line.productionLineName }}
+          ·
+          {{ line.productModelName }}
+
+          @if (line.modelYear) {
+            · {{ line.modelYear }}
+          }
+
+          @if (!line.active) {
+            · Inactiva
+          }
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Estado</mat-label>
+
+    <mat-icon matPrefix>
+      fact_check
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedStatus()"
+      (selectionChange)="
+        selectedStatus.set($event.value);
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todos los estados
+      </mat-option>
+
+      @for (
+        status of statusOptions;
+        track status.value
+      ) {
+        <mat-option [value]="status.value">
+          {{ status.label }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Periodo rápido</mat-label>
+
+    <mat-icon matPrefix>
+      date_range
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPreset()"
+      (selectionChange)="
+        applyPreset($event.value)
+      "
+    >
+      <mat-option value="current_month">
+        Mes actual
+      </mat-option>
+
+      <mat-option value="last_7">
+        Últimos 7 días
+      </mat-option>
+
+      <mat-option value="last_30">
+        Últimos 30 días
+      </mat-option>
+
+      <mat-option value="last_90">
+        Últimos 90 días
+      </mat-option>
+
+      <mat-option value="custom">
+        Personalizado
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Desde</mat-label>
+
+    <input
+      matInput
+      type="date"
+      [value]="dateFrom()"
+      (change)="
+        handleDateChange(
+          'from',
+          $event
+        )
+      "
+    />
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Hasta</mat-label>
+
+    <input
+      matInput
+      type="date"
+      [value]="dateTo()"
+      (change)="
+        handleDateChange(
+          'to',
+          $event
+        )
+      "
+    />
+  </mat-form-field>
+
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Actualizar reporte"
+    [disabled]="
+      isLoading()
+      || reportsService.isRefreshing()
+    "
+    (click)="reload()"
+  >
+    <mat-icon
+      [class.spinning]="
+        reportsService.isRefreshing()
+      "
+    >
+      refresh
+    </mat-icon>
+  </button>
+</section>
+
+<section class="report-context">
+  <div>
+    <mat-icon>summarize</mat-icon>
+
+    <div>
+      <span>Reporte seleccionado</span>
+
+      <strong>
+        {{ selectedPlantLabel() }}
+        ·
+        {{ periodLabel() }}
+      </strong>
+    </div>
+  </div>
+
+  <div>
+    <span>Vista previa</span>
+
+    <strong>
+      Hasta 250 registros en pantalla.
+      La exportación consulta todos los datos
+      disponibles dentro del límite del reporte.
+    </strong>
+  </div>
+</section>
+
+@if (isLoading()) {
+  <section class="state-container">
+    <mat-spinner diameter="46"></mat-spinner>
+
+    <span>
+      Preparando el reporte...
+    </span>
+  </section>
+} @else if (
+  reportsService.errorMessage()
+) {
+  <section class="state-container">
+    <mat-icon>error_outline</mat-icon>
+
+    <h3>
+      No fue posible cargar el reporte
+    </h3>
+
+    <p>
+      {{ reportsService.errorMessage() }}
+    </p>
+
+    <button
+      mat-flat-button
+      type="button"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Volver a intentar
+    </button>
+  </section>
+} @else if (
+  reportsService.summary();
+  as summary
+) {
+  <section class="summary-grid">
+    <article>
+      <div class="summary-icon primary">
+        <mat-icon>description</mat-icon>
+      </div>
+
+      <div>
+        <span>Registros</span>
+
+        <strong>
+          {{ summary.totalRecords | number }}
+        </strong>
+
+        <small>
+          {{ summary.submittedRecords }}
+          enviados ·
+          {{ summary.closedRecords }}
+          cerrados
+        </small>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon success">
+        <mat-icon>
+          precision_manufacturing
+        </mat-icon>
+      </div>
+
+      <div>
+        <span>Producción</span>
+
+        <strong>
+          {{
+            summary.producedQuantity
+              | number
+          }}
+        </strong>
+
+        <small>
+          {{
+            summary.defectiveHarnessQuantity
+              | number
+          }}
+          arneses defectuosos
+        </small>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon warning">
+        <mat-icon>bug_report</mat-icon>
+      </div>
+
+      <div>
+        <span>Defectos</span>
+
+        <strong>
+          {{ summary.totalDefects | number }}
+        </strong>
+
+        <small>
+          @if (
+            summary.defectiveHarnessPercentage
+              !== null
+          ) {
+            {{
+              summary.defectiveHarnessPercentage
+                | number:'1.2-4'
+            }}
+            % arneses defectuosos
+          } @else {
+            Sin producción
+          }
+        </small>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon info">
+        <mat-icon>percent</mat-icon>
+      </div>
+
+      <div>
+        <span>IPD acumulado</span>
+
+        <strong>
+          @if (
+            summary.ipdPercentage !== null
+          ) {
+            {{
+              summary.ipdPercentage
+                | number:'1.2-4'
+            }}
+            %
+          } @else {
+            —
+          }
+        </strong>
+
+        <small>
+          Defectos ÷ producción × 100
+        </small>
+      </div>
+    </article>
+
+    <article
+      [class.has-alerts]="
+        summary.outsideTargetRecords > 0
+      "
+    >
+      <div class="summary-icon danger">
+        <mat-icon>warning</mat-icon>
+      </div>
+
+      <div>
+        <span>Fuera del objetivo</span>
+
+        <strong>
+          {{
+            summary.outsideTargetRecords
+          }}
+        </strong>
+
+        <small>
+          {{
+            summary.withinTargetRecords
+          }}
+          dentro ·
+          {{
+            summary.recordsWithoutTarget
+          }}
+          sin target
+        </small>
+      </div>
+    </article>
+  </section>
+
+  <section class="status-strip">
+    <div>
+      <span class="dot draft"></span>
+      Borradores
+      <strong>
+        {{ summary.draftRecords }}
+      </strong>
+    </div>
+
+    <div>
+      <span class="dot submitted"></span>
+      Enviados
+      <strong>
+        {{ summary.submittedRecords }}
+      </strong>
+    </div>
+
+    <div>
+      <span class="dot closed"></span>
+      Cerrados
+      <strong>
+        {{ summary.closedRecords }}
+      </strong>
+    </div>
+
+    <div>
+      <span class="dot no-production"></span>
+      Sin producción
+      <strong>
+        {{ summary.noProductionRecords }}
+      </strong>
+    </div>
+
+    <div class="date-range">
+      Primer registro:
+      <strong>
+        {{
+          formatDate(
+            summary.firstRecordDate
+          )
+        }}
+      </strong>
+
+      · Último:
+      <strong>
+        {{
+          formatDate(
+            summary.lastRecordDate
+          )
+        }}
+      </strong>
+    </div>
+  </section>
+
+  <section class="preview-card">
+    <header>
+      <div>
+        <span>Vista previa del reporte</span>
+
+        <h3>
+          Información consolidada
+        </h3>
+      </div>
+
+      <div class="preview-tabs">
+        <button
+          type="button"
+          [class.active]="
+            previewMode() === 'records'
+          "
+          (click)="previewMode.set('records')"
+        >
+          <mat-icon>table_rows</mat-icon>
+          Registros
+        </button>
+
+        <button
+          type="button"
+          [class.active]="
+            previewMode() === 'daily'
+          "
+          (click)="previewMode.set('daily')"
+        >
+          <mat-icon>calendar_view_week</mat-icon>
+          Por día
+        </button>
+
+        <button
+          type="button"
+          [class.active]="
+            previewMode() === 'lines'
+          "
+          (click)="previewMode.set('lines')"
+        >
+          <mat-icon>account_tree</mat-icon>
+          Por línea
+        </button>
+      </div>
+    </header>
+
+    @switch (previewMode()) {
+      @case ('records') {
+        <div class="records-toolbar">
+          <p>
+            {{
+              filteredPreviewRecords()
+                .length
+            }}
+            registros visibles
+          </p>
+
+          <mat-form-field
+            appearance="outline"
+            subscriptSizing="dynamic"
+          >
+            <mat-label>
+              Buscar en vista previa
+            </mat-label>
+
+            <mat-icon matPrefix>
+              search
+            </mat-icon>
+
+            <input
+              matInput
+              [value]="recordSearch()"
+              placeholder="Línea, supervisor o estado"
+              (input)="
+                updateRecordSearch($event)
+              "
+            />
+
+            @if (recordSearch()) {
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                aria-label="Limpiar búsqueda"
+                (click)="clearRecordSearch()"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </mat-form-field>
+        </div>
+
+        @if (
+          filteredPreviewRecords().length
+            > 0
+        ) {
+          <div class="records-table">
+            <div class="record-header">
+              <span>Fecha</span>
+              <span>Línea / modelo</span>
+              <span>Turno</span>
+              <span>Supervisor</span>
+              <span>Producción</span>
+              <span>Defectos</span>
+              <span>IPD / target</span>
+              <span>Estado</span>
+            </div>
+
+            @for (
+              record of
+                filteredPreviewRecords();
+              track record.recordId
+            ) {
+              <div class="record-row">
+                <span data-label="Fecha">
+                  {{
+                    formatDate(
+                      record.productionDate
+                    )
+                  }}
+                </span>
+
+                <span data-label="Línea / modelo">
+                  <strong>
+                    {{
+                      record.productionLineName
+                    }}
+                  </strong>
+
+                  <small>
+                    {{ record.productModelName }}
+
+                    @if (record.modelYear) {
+                      · {{ record.modelYear }}
+                    }
+                  </small>
+                </span>
+
+                <span data-label="Turno">
+                  {{ record.shiftCode }}
+                </span>
+
+                <span data-label="Supervisor">
+                  <strong>
+                    {{ record.supervisorName }}
+                  </strong>
+
+                  <small>
+                    {{
+                      record
+                        .supervisorEmployeeNumber
+                    }}
+                  </small>
+                </span>
+
+                <span data-label="Producción">
+                  {{
+                    record.producedQuantity
+                      | number
+                  }}
+                </span>
+
+                <span data-label="Defectos">
+                  {{
+                    record.totalDefects
+                      | number
+                  }}
+                </span>
+
+                <span data-label="IPD / target">
+                  <strong>
+                    @if (
+                      record.ipdPercentage
+                        !== null
+                    ) {
+                      {{
+                        record.ipdPercentage
+                          | number:'1.2-4'
+                      }}
+                      %
+                    } @else {
+                      —
+                    }
+                  </strong>
+
+                  <small>
+                    Target
+                    @if (
+                      record.targetPercentage
+                        !== null
+                    ) {
+                      {{
+                        record.targetPercentage
+                          | number:'1.2-4'
+                      }}
+                      %
+                    } @else {
+                      —
+                    }
+                  </small>
+                </span>
+
+                <span data-label="Estado">
+                  <span
+                    class="status-badge"
+                    [class]="
+                      'status-badge '
+                      + statusClass(
+                        record.status
+                      )
+                    "
+                  >
+                    {{
+                      statusLabel(
+                        record.status
+                      )
+                    }}
+                  </span>
+                </span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state compact">
+            <mat-icon>search_off</mat-icon>
+
+            <p>
+              No existen registros que coincidan
+              con los filtros o la búsqueda.
+            </p>
+          </div>
+        }
+      }
+
+      @case ('daily') {
+        @if (
+          reportsService.daily().length
+            > 0
+        ) {
+          <div class="daily-chart-scroll">
+            <div
+              class="daily-chart"
+              [style.--day-count]="
+                reportsService.daily().length
+              "
+            >
+              <div class="chart-grid-lines">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+
+              <div class="daily-columns">
+                @for (
+                  day of
+                    reportsService.daily();
+                  track day.productionDate
+                ) {
+                  <div
+                    class="daily-column"
+                    [matTooltip]="
+                      formatDate(
+                        day.productionDate
+                      )
+                      + ' · '
+                      + day.totalRecords
+                      + ' registros · '
+                      + day.totalDefects
+                      + ' defectos · IPD '
+                      + (
+                        day.ipdPercentage
+                        ?? 0
+                      )
+                      + '%'
+                    "
+                  >
+                    <span>
+                      {{ day.totalDefects }}
+                    </span>
+
+                    <div class="bar-space">
+                      <span
+                        class="daily-bar"
+                        [class.alert]="
+                          day
+                            .outsideTargetRecords
+                            > 0
+                        "
+                        [style.height.%]="
+                          dailyBarHeight(day)
+                        "
+                      ></span>
+                    </div>
+
+                    <small>
+                      {{
+                        day.productionDate
+                          .slice(5)
+                      }}
+                    </small>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="daily-summary-table">
+            <div class="daily-summary-header">
+              <span>Fecha</span>
+              <span>Registros</span>
+              <span>Producción</span>
+              <span>Defectuosos</span>
+              <span>Defectos</span>
+              <span>IPD</span>
+              <span>Fuera target</span>
+            </div>
+
+            @for (
+              day of reportsService.daily();
+              track day.productionDate
+            ) {
+              @if (
+                day.totalRecords > 0
+                || day.producedQuantity > 0
+              ) {
+                <div class="daily-summary-row">
+                  <span>
+                    {{
+                      formatDate(
+                        day.productionDate
+                      )
+                    }}
+                  </span>
+
+                  <span>
+                    {{ day.totalRecords }}
+                  </span>
+
+                  <span>
+                    {{
+                      day.producedQuantity
+                        | number
+                    }}
+                  </span>
+
+                  <span>
+                    {{
+                      day
+                        .defectiveHarnessQuantity
+                        | number
+                    }}
+                  </span>
+
+                  <span>
+                    {{
+                      day.totalDefects
+                        | number
+                    }}
+                  </span>
+
+                  <span>
+                    @if (
+                      day.ipdPercentage
+                        !== null
+                    ) {
+                      {{
+                        day.ipdPercentage
+                          | number:'1.2-4'
+                      }}
+                      %
+                    } @else {
+                      —
+                    }
+                  </span>
+
+                  <span>
+                    {{
+                      day
+                        .outsideTargetRecords
+                    }}
+                  </span>
+                </div>
+              }
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <mat-icon>calendar_month</mat-icon>
+
+            <p>
+              Sin información diaria disponible.
+            </p>
+          </div>
+        }
+      }
+
+      @case ('lines') {
+        @if (
+          reportsService.byLine().length
+            > 0
+        ) {
+          <div class="line-list">
+            @for (
+              line of
+                reportsService.byLine();
+              track line.lineModelAssignmentId;
+              let position = $index
+            ) {
+              <div class="line-row">
+                <span class="rank">
+                  {{ position + 1 }}
+                </span>
+
+                <div class="line-data">
+                  <div>
+                    <strong>
+                      {{
+                        line.productionLineName
+                      }}
+                    </strong>
+
+                    <small>
+                      {{ line.productModelName }}
+
+                      @if (line.modelYear) {
+                        · {{ line.modelYear }}
+                      }
+                    </small>
+                  </div>
+
+                  <div class="line-track">
+                    <span
+                      [style.width.%]="
+                        lineBarWidth(line)
+                      "
+                    ></span>
+                  </div>
+                </div>
+
+                <div class="line-metrics">
+                  <span>
+                    Producción
+                    <strong>
+                      {{
+                        line.producedQuantity
+                          | number
+                      }}
+                    </strong>
+                  </span>
+
+                  <span>
+                    Defectos
+                    <strong>
+                      {{
+                        line.totalDefects
+                          | number
+                      }}
+                    </strong>
+                  </span>
+
+                  <span>
+                    IPD
+                    <strong>
+                      @if (
+                        line.ipdPercentage
+                          !== null
+                      ) {
+                        {{
+                          line.ipdPercentage
+                            | number:'1.2-4'
+                        }}
+                        %
+                      } @else {
+                        —
+                      }
+                    </strong>
+                  </span>
+
+                  <span>
+                    Target
+                    <strong>
+                      @if (
+                        line
+                          .weightedTargetPercentage
+                          !== null
+                      ) {
+                        {{
+                          line
+                            .weightedTargetPercentage
+                            | number:'1.2-4'
+                        }}
+                        %
+                      } @else {
+                        —
+                      }
+                    </strong>
+                  </span>
+
+                  <span>
+                    Cumplimiento
+                    <strong>
+                      @if (
+                        line.compliancePercentage
+                          !== null
+                      ) {
+                        {{
+                          line
+                            .compliancePercentage
+                            | number:'1.0-2'
+                        }}
+                        %
+                      } @else {
+                        —
+                      }
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-state">
+            <mat-icon>account_tree</mat-icon>
+
+            <p>
+              Sin información consolidada
+              por línea.
+            </p>
+          </div>
+        }
+      }
+    }
+  </section>
+} @else {
+  <section class="state-container">
+    <mat-icon>summarize</mat-icon>
+
+    <h3>Sin información disponible</h3>
+
+    <p>
+      Selecciona filtros válidos para generar
+      el reporte.
+    </p>
+  </section>
+}

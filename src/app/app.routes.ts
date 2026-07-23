@@ -163,17 +163,25 @@ export const routes: Routes = [
         component.DefectAnalysisComponent,
     ),
 },
-      {
-        path: 'reports',
-        title: 'Reportes · IPD Quality',
-        data: {
-          pageTitle: 'Reportes',
-          icon: 'summarize',
-          description:
-            'Generación y exportación de reportes de producción, defectos e IPD.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'reports',
+  title: 'Reportes · IPD Quality',
+
+  data: {
+    pageTitle: 'Reportes',
+    icon: 'summarize',
+    description:
+      'Generación y exportación de reportes de producción, defectos e IPD.',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/reports/pages/reports/reports.component'
+    ).then(
+      component =>
+        component.ReportsComponent,
+    ),
+},
 {
   path: 'employees',
   title: 'Empleados · IPD Quality',
