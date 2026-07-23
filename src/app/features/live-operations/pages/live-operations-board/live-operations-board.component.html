@@ -1,0 +1,775 @@
+<section class="page-header">
+  <div>
+    <span>Monitoreo operativo</span>
+
+    <h2>Operación en tiempo real</h2>
+
+    <p>
+      Supervisa capturas, producción, defectos y
+      cumplimiento del IPD de todas las líneas.
+    </p>
+  </div>
+
+  <div
+    class="connection-indicator"
+    [class.connected]="
+      liveOperationsService.realtimeStatus()
+        === 'connected'
+    "
+    [class.error]="
+      liveOperationsService.realtimeStatus()
+        === 'error'
+    "
+  >
+    <span class="connection-dot"></span>
+
+    <div>
+      <strong>
+        {{ realtimeLabel() }}
+      </strong>
+
+      @if (
+        liveOperationsService.lastLoadedAt();
+        as lastLoadedAt
+      ) {
+        <small>
+          Actualizado
+          {{
+            lastLoadedAt
+              | date:'HH:mm:ss'
+          }}
+        </small>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="filters-card">
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Planta</mat-label>
+
+    <mat-icon matPrefix>
+      factory
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPlantId()"
+      (selectionChange)="
+        selectedPlantId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      @for (
+        plant of plantsService.plants();
+        track plant.id
+      ) {
+        <mat-option [value]="plant.id">
+          {{ plant.code }} · {{ plant.name }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Turno</mat-label>
+
+    <mat-icon matPrefix>
+      schedule
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedShiftId()"
+      (selectionChange)="
+        selectedShiftId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todos los turnos
+      </mat-option>
+
+      @for (
+        shift of shiftsService.shifts();
+        track shift.id
+      ) {
+        @if (shift.active) {
+          <mat-option [value]="shift.id">
+            {{ shift.code }} · {{ shift.name }}
+          </mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Fecha</mat-label>
+
+    <mat-icon matPrefix>
+      calendar_today
+    </mat-icon>
+
+    <input
+      matInput
+      type="date"
+      [value]="selectedDate()"
+      (change)="
+        selectedDate.set(
+          $any($event.target).value
+        );
+        handleFilterChange()
+      "
+    />
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Estado</mat-label>
+
+    <mat-icon matPrefix>
+      filter_alt
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedStatus()"
+      (selectionChange)="
+        selectedStatus.set($event.value)
+      "
+    >
+      <mat-option value="all">
+        Todos
+      </mat-option>
+
+      <mat-option value="pending">
+        Pendientes
+      </mat-option>
+
+      <mat-option value="draft">
+        Borradores
+      </mat-option>
+
+      <mat-option value="reported">
+        Reportados
+      </mat-option>
+
+      <mat-option value="outside_target">
+        Fuera del objetivo
+      </mat-option>
+
+      <mat-option value="no_production">
+        Sin producción
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+    class="search-field"
+  >
+    <mat-label>Buscar línea</mat-label>
+
+    <mat-icon matPrefix>
+      search
+    </mat-icon>
+
+    <input
+      matInput
+      [value]="searchTerm()"
+      placeholder="Línea, modelo, turno, supervisor o defecto"
+      (input)="updateSearch($event)"
+    />
+
+    @if (searchTerm()) {
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Limpiar búsqueda"
+        (click)="clearSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  <div class="toolbar-actions">
+    <button
+      mat-icon-button
+      type="button"
+      [matTooltip]="
+        soundEnabled()
+          ? 'Desactivar alertas sonoras'
+          : 'Activar alertas sonoras'
+      "
+      (click)="toggleSound()"
+    >
+      <mat-icon>
+        {{
+          soundEnabled()
+            ? 'volume_up'
+            : 'volume_off'
+        }}
+      </mat-icon>
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar tablero"
+      [disabled]="
+        isLoading()
+        || liveOperationsService
+          .isRefreshing()
+      "
+      (click)="reload()"
+    >
+      <mat-icon
+        [class.spinning]="
+          liveOperationsService
+            .isRefreshing()
+        "
+      >
+        refresh
+      </mat-icon>
+    </button>
+  </div>
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>fact_check</mat-icon>
+    </div>
+
+    <div>
+      <span>Avance de captura</span>
+
+      <strong>
+        {{ completionPercentage() }} %
+      </strong>
+
+      <small>
+        {{ reportedLines() }}
+        de
+        {{ totalLines() }}
+        combinaciones
+      </small>
+    </div>
+
+    <mat-progress-bar
+      mode="determinate"
+      [value]="completionPercentage()"
+    ></mat-progress-bar>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>
+        precision_manufacturing
+      </mat-icon>
+    </div>
+
+    <div>
+      <span>Producción reportada</span>
+
+      <strong>
+        {{ totalProduced() }}
+      </strong>
+
+      <small>
+        Arneses producidos
+      </small>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon warning">
+      <mat-icon>bug_report</mat-icon>
+    </div>
+
+    <div>
+      <span>Defectos reportados</span>
+
+      <strong>
+        {{ totalDefects() }}
+      </strong>
+
+      <small>
+        En registros enviados
+      </small>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon info">
+      <mat-icon>percent</mat-icon>
+    </div>
+
+    <div>
+      <span>IPD acumulado</span>
+
+      <strong>
+        @if (aggregateIpd() !== null) {
+          {{
+            aggregateIpd()
+              | number:'1.2-4'
+          }}
+          %
+        } @else {
+          —
+        }
+      </strong>
+
+      <small>
+        Fecha y filtros actuales
+      </small>
+    </div>
+  </article>
+
+  <article
+    class="summary-card alert-summary"
+    [class.has-alerts]="
+      outsideTargetLines() > 0
+    "
+  >
+    <div class="summary-icon danger">
+      <mat-icon>warning</mat-icon>
+    </div>
+
+    <div>
+      <span>Alertas de IPD</span>
+
+      <strong>
+        {{ outsideTargetLines() }}
+      </strong>
+
+      <small>
+        Líneas fuera del objetivo
+      </small>
+    </div>
+  </article>
+</section>
+
+@if (outsideTargetLines() > 0) {
+  <section class="alert-banner">
+    <mat-icon>notification_important</mat-icon>
+
+    <div>
+      <strong>
+        Atención: existen líneas fuera del target
+      </strong>
+
+      <span>
+        Usa el filtro “Fuera del objetivo” para
+        revisar únicamente las alertas activas.
+      </span>
+    </div>
+  </section>
+}
+
+@if (isLoading()) {
+  <section class="state-container">
+    <mat-spinner diameter="46"></mat-spinner>
+
+    <span>
+      Preparando el tablero operativo...
+    </span>
+  </section>
+} @else if (
+  liveOperationsService.errorMessage()
+) {
+  <section class="state-container">
+    <mat-icon>error_outline</mat-icon>
+
+    <h3>
+      No fue posible cargar la operación
+    </h3>
+
+    <p>
+      {{
+        liveOperationsService.errorMessage()
+      }}
+    </p>
+
+    <button
+      mat-flat-button
+      type="button"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Volver a intentar
+    </button>
+  </section>
+} @else if (
+  filteredBoard().length === 0
+) {
+  <section class="state-container">
+    <mat-icon>monitoring</mat-icon>
+
+    <h3>
+      No hay información para mostrar
+    </h3>
+
+    <p>
+      Revisa la planta, fecha, turno, estado,
+      asignaciones y modelos vigentes.
+    </p>
+  </section>
+} @else {
+  <section class="operations-grid">
+    @for (
+      item of filteredBoard();
+      track
+        item.lineModelAssignmentId
+        + item.shiftId
+    ) {
+      <article
+        class="operation-card"
+        [class.pending-card]="
+          item.recordId === null
+        "
+        [class.draft-card]="
+          item.status === 'draft'
+        "
+        [class.within-target-card]="
+          isReported(item)
+          && item.isWithinTarget === true
+        "
+        [class.outside-target-card]="
+          isReported(item)
+          && item.isWithinTarget === false
+        "
+        [class.no-production-card]="
+          item.status === 'no_production'
+        "
+      >
+        <header>
+          <div>
+            <div class="card-tags">
+              <span class="plant-badge">
+                {{ item.plantCode }}
+              </span>
+
+              <span class="shift-badge">
+                {{ item.shiftCode }}
+              </span>
+            </div>
+
+            <h3>
+              {{ item.productionLineName }}
+            </h3>
+
+            <p>
+              {{ item.productModelName }}
+
+              @if (item.modelYear) {
+                · {{ item.modelYear }}
+              }
+            </p>
+          </div>
+
+          <mat-chip
+            [class.pending-chip]="
+              item.recordId === null
+            "
+            [class.draft-chip]="
+              item.status === 'draft'
+            "
+            [class.reported-chip]="
+              item.status === 'submitted'
+            "
+            [class.closed-chip]="
+              item.status === 'closed'
+            "
+            [class.no-production-chip]="
+              item.status === 'no_production'
+            "
+          >
+            <mat-icon>
+              {{ statusIcon(item) }}
+            </mat-icon>
+
+            {{ statusLabel(item) }}
+          </mat-chip>
+        </header>
+
+        <section class="supervisor-section">
+          @if (item.supervisorName) {
+            <div class="avatar">
+              {{
+                initials(item.supervisorName)
+              }}
+            </div>
+
+            <div>
+              <span>
+                Supervisor responsable
+              </span>
+
+              <strong>
+                {{ item.supervisorName }}
+              </strong>
+
+              <small>
+                {{
+                  item.supervisorEmployeeNumber
+                }}
+              </small>
+            </div>
+          } @else if (
+            primaryAssignedSupervisor(item);
+            as assignedSupervisor
+          ) {
+            <div class="avatar">
+              {{
+                initials(
+                  assignedSupervisor.fullName
+                )
+              }}
+            </div>
+
+            <div>
+              <span>
+                Supervisor asignado
+              </span>
+
+              <strong>
+                {{ assignedSupervisor.fullName }}
+              </strong>
+
+              <small>
+                {{
+                  assignedSupervisor.employeeNumber
+                }}
+
+                @if (
+                  item.assignedSupervisors.length
+                    > 1
+                ) {
+                  · +{{
+                    item.assignedSupervisors.length
+                      - 1
+                  }}
+                }
+              </small>
+            </div>
+          } @else {
+            <mat-icon>person_off</mat-icon>
+
+            <div>
+              <span>Responsable</span>
+
+              <strong>
+                Sin supervisor asignado
+              </strong>
+            </div>
+          }
+        </section>
+
+        <section class="metrics-grid">
+          <article>
+            <span>Producción</span>
+
+            <strong>
+              {{
+                item.producedQuantity
+                  ?? 0
+              }}
+            </strong>
+          </article>
+
+          <article>
+            <span>Defectuosos</span>
+
+            <strong>
+              {{
+                item.defectiveHarnessQuantity
+                  ?? 0
+              }}
+            </strong>
+          </article>
+
+          <article>
+            <span>Defectos</span>
+
+            <strong>
+              {{
+                item.totalDefects
+                  ?? 0
+              }}
+            </strong>
+          </article>
+
+          <article>
+            <span>IPD</span>
+
+            <strong>
+              @if (
+                item.ipdPercentage !== null
+              ) {
+                {{
+                  item.ipdPercentage
+                    | number:'1.2-4'
+                }}
+                %
+              } @else {
+                —
+              }
+            </strong>
+          </article>
+
+          <article>
+            <span>Target</span>
+
+            <strong>
+              @if (
+                item.targetPercentage !== null
+              ) {
+                {{
+                  item.targetPercentage
+                    | number:'1.2-4'
+                }}
+                %
+              } @else {
+                —
+              }
+            </strong>
+          </article>
+        </section>
+
+        <section
+          class="target-state"
+          [class.success]="
+            isReported(item)
+            && item.isWithinTarget === true
+          "
+          [class.danger]="
+            isReported(item)
+            && item.isWithinTarget === false
+          "
+        >
+          <mat-icon>
+            @if (
+              isReported(item)
+              && item.isWithinTarget === true
+            ) {
+              check_circle
+            } @else if (
+              isReported(item)
+              && item.isWithinTarget === false
+            ) {
+              error
+            } @else {
+              pending
+            }
+          </mat-icon>
+
+          <strong>
+            {{ targetStateLabel(item) }}
+          </strong>
+        </section>
+
+        <section class="detail-grid">
+          <div>
+            <span>Defecto principal</span>
+
+            <strong>
+              {{
+                item.topDefectTypeName
+                  ?? 'Sin defectos'
+              }}
+            </strong>
+
+            @if (
+              item.topDefectQuantity !== null
+            ) {
+              <small>
+                {{ item.topDefectQuantity }}
+                ocurrencias
+              </small>
+            }
+          </div>
+
+          <div>
+            <span>IPD mensual</span>
+
+            <strong>
+              @if (
+                item.monthlyIpdPercentage
+                  !== null
+              ) {
+                {{
+                  item.monthlyIpdPercentage
+                    | number:'1.2-4'
+                }}
+                %
+              } @else {
+                Sin registros
+              }
+            </strong>
+
+            <small>
+              {{
+                item.monthlyRecordCount
+              }}
+              registros reportados
+            </small>
+          </div>
+        </section>
+
+        @if (item.comment) {
+          <section class="comment-section">
+            <mat-icon>comment</mat-icon>
+
+            <span>
+              {{ item.comment }}
+            </span>
+          </section>
+        }
+
+        <footer>
+          <div>
+            <span>Última actualización</span>
+
+            <strong>
+              @if (item.updatedAt) {
+                {{
+                  item.updatedAt
+                    | date:'dd/MM/yyyy HH:mm:ss'
+                }}
+              } @else {
+                Sin captura
+              }
+            </strong>
+          </div>
+
+          @if (
+            item.isWithinTarget === false
+          ) {
+            <mat-icon
+              class="alert-icon"
+              matTooltip="IPD fuera del objetivo"
+            >
+              notification_important
+            </mat-icon>
+          } @else {
+            <mat-icon>
+              monitoring
+            </mat-icon>
+          }
+        </footer>
+      </article>
+    }
+  </section>
+}

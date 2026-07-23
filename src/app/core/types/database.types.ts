@@ -1655,6 +1655,56 @@ export type Database = {
           version: number
         }[]
       }
+      get_live_operation_board: {
+        Args: {
+          plant_id_value: string
+          production_date_value: string
+          shift_id_value?: string
+        }
+        Returns: {
+          assigned_supervisors: Json
+          closed_at: string
+          comment: string
+          current_user_is_assigned: boolean
+          defect_type_count: number
+          defective_harness_quantity: number
+          display_order: number
+          ipd_percentage: number
+          is_within_target: boolean
+          line_model_assignment_id: string
+          model_year: number
+          monthly_ipd_percentage: number
+          monthly_produced_quantity: number
+          monthly_record_count: number
+          monthly_total_defects: number
+          plant_code: string
+          plant_id: string
+          plant_name: string
+          produced_quantity: number
+          product_model_id: string
+          product_model_name: string
+          production_line_id: string
+          production_line_name: string
+          record_id: string
+          shift_code: string
+          shift_id: string
+          shift_name: string
+          status: Database["public"]["Enums"]["ipd_record_status"]
+          submitted_at: string
+          supervisor_employee_id: string
+          supervisor_employee_number: string
+          supervisor_name: string
+          target_id: string
+          target_percentage: number
+          top_defect_quantity: number
+          top_defect_type_code: string
+          top_defect_type_id: string
+          top_defect_type_name: string
+          total_defects: number
+          updated_at: string
+          version: number
+        }[]
+      }
       import_employee_batch: {
         Args: { rows_value: Json }
         Returns: {

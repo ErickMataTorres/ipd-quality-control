@@ -92,19 +92,24 @@ export const routes: Routes = [
               component.DashboardComponent,
           ),
       },
+
       {
-        path: 'live-operations',
-        title:
-          'Operación en tiempo real · IPD Quality',
-        data: {
-          pageTitle:
-            'Operación en tiempo real',
-          icon: 'monitoring',
-          description:
-            'Aquí se mostrarán en tiempo real las capturas, líneas pendientes y alertas de IPD.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+  path: 'live-operations',
+  title: 'Operación en tiempo real · IPD Quality',
+
+  data: {
+    pageTitle: 'Operación en tiempo real',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/live-operations/pages/live-operations-board/live-operations-board.component'
+    ).then(
+      component =>
+        component.LiveOperationsBoardComponent,
+    ),
+},
+
 {
   path: 'daily-entries',
   title: 'Registros diarios · IPD Quality',
