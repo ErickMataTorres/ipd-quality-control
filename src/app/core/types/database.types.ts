@@ -1736,6 +1736,95 @@ export type Database = {
           record_count: number
         }[]
       }
+      get_line_performance_by_shift: {
+        Args: { line_model_assignment_id_value: string; month_value: string }
+        Returns: {
+          defective_harness_quantity: number
+          display_order: number
+          ipd_percentage: number
+          is_within_target: boolean
+          outside_target_records: number
+          produced_quantity: number
+          reported_records: number
+          shift_code: string
+          shift_id: string
+          shift_name: string
+          target_percentage: number
+          total_defects: number
+          within_target_records: number
+        }[]
+      }
+      get_line_performance_daily: {
+        Args: {
+          line_model_assignment_id_value: string
+          month_value: string
+          shift_id_value?: string
+        }
+        Returns: {
+          defective_harness_quantity: number
+          ipd_percentage: number
+          is_within_target: boolean
+          no_production_records: number
+          outside_target_records: number
+          produced_quantity: number
+          production_date: string
+          reported_records: number
+          target_percentage: number
+          total_defects: number
+          within_target_records: number
+        }[]
+      }
+      get_line_performance_defects: {
+        Args: {
+          line_model_assignment_id_value: string
+          month_value: string
+          result_limit_value?: number
+          shift_id_value?: string
+        }
+        Returns: {
+          defect_category: string
+          defect_type_code: string
+          defect_type_id: string
+          defect_type_name: string
+          percentage: number
+          quantity: number
+          record_count: number
+        }[]
+      }
+      get_line_performance_overview: {
+        Args: {
+          month_value: string
+          plant_id_value: string
+          shift_id_value?: string
+        }
+        Returns: {
+          compliance_percentage: number
+          configured_target_percentage: number
+          defective_harness_quantity: number
+          display_order: number
+          effective_target_percentage: number
+          first_record_date: string
+          ipd_percentage: number
+          is_within_target: boolean
+          last_record_date: string
+          line_model_assignment_id: string
+          model_year: number
+          no_production_records: number
+          outside_target_records: number
+          plant_code: string
+          plant_id: string
+          plant_name: string
+          produced_quantity: number
+          product_model_id: string
+          product_model_name: string
+          production_line_id: string
+          production_line_name: string
+          reported_records: number
+          total_defects: number
+          weighted_target_percentage: number
+          within_target_records: number
+        }[]
+      }
       get_live_operation_board: {
         Args: {
           plant_id_value: string

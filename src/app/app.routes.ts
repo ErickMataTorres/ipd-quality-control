@@ -128,19 +128,22 @@ export const routes: Routes = [
         component.DailyEntriesListComponent,
     ),
 },
-      {
-        path: 'line-performance',
-        title:
-          'Rendimiento por línea · IPD Quality',
-        data: {
-          pageTitle:
-            'Rendimiento por línea',
-          icon: 'query_stats',
-          description:
-            'Consulta mensual, tendencias, cumplimiento del target y comparativos.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'line-performance',
+  title: 'Rendimiento por línea · IPD Quality',
+
+  data: {
+    pageTitle: 'Rendimiento por línea',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/line-performance/pages/line-performance/line-performance.component'
+    ).then(
+      component =>
+        component.LinePerformanceComponent,
+    ),
+},
       {
         path: 'defect-analysis',
         title:

@@ -1,0 +1,901 @@
+<section class="page-header">
+  <div>
+    <span>Análisis mensual</span>
+
+    <h2>Rendimiento por línea</h2>
+
+    <p>
+      Compara producción, defectos, IPD,
+      cumplimiento y comportamiento por turno.
+    </p>
+  </div>
+
+  <div class="realtime-status">
+    <span
+      [class.connected]="
+        performanceService.realtimeStatus()
+          === 'connected'
+      "
+    ></span>
+
+    <div>
+      <strong>
+        {{ realtimeLabel() }}
+      </strong>
+
+      @if (
+        performanceService.lastLoadedAt();
+        as lastLoadedAt
+      ) {
+        <small>
+          Actualizado
+          {{
+            lastLoadedAt
+              | date:'HH:mm:ss'
+          }}
+        </small>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="filters-card">
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Planta</mat-label>
+
+    <mat-icon matPrefix>
+      factory
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPlantId()"
+      (selectionChange)="
+        selectedPlantId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      @for (
+        plant of plantsService.plants();
+        track plant.id
+      ) {
+        @if (plant.active) {
+          <mat-option [value]="plant.id">
+            {{ plant.code }} · {{ plant.name }}
+          </mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Turno</mat-label>
+
+    <mat-icon matPrefix>
+      schedule
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedShiftId()"
+      (selectionChange)="
+        selectedShiftId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todos los turnos
+      </mat-option>
+
+      @for (
+        shift of shiftsService.shifts();
+        track shift.id
+      ) {
+        @if (shift.active) {
+          <mat-option [value]="shift.id">
+            {{ shift.code }} · {{ shift.name }}
+          </mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <div class="month-navigation">
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Mes anterior"
+      (click)="previousMonth()"
+    >
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+
+    <div>
+      <span>Mes analizado</span>
+
+      <strong>
+        {{ monthLabel() }}
+      </strong>
+    </div>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Mes siguiente"
+      [disabled]="!canGoNext()"
+      (click)="nextMonth()"
+    >
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Estado</mat-label>
+
+    <mat-icon matPrefix>
+      filter_alt
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedStatus()"
+      (selectionChange)="
+        selectedStatus.set($event.value)
+      "
+    >
+      <mat-option value="all">
+        Todas
+      </mat-option>
+
+      <mat-option value="within">
+        Dentro del objetivo
+      </mat-option>
+
+      <mat-option value="outside">
+        Fuera del objetivo
+      </mat-option>
+
+      <mat-option value="without_data">
+        Sin registros
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+    class="search-field"
+  >
+    <mat-label>Buscar línea</mat-label>
+
+    <mat-icon matPrefix>
+      search
+    </mat-icon>
+
+    <input
+      matInput
+      [value]="searchTerm()"
+      placeholder="Línea o modelo"
+      (input)="updateSearch($event)"
+    />
+
+    @if (searchTerm()) {
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Limpiar búsqueda"
+        (click)="clearSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Actualizar"
+    [disabled]="
+      isLoading()
+      || performanceService.isRefreshing()
+    "
+    (click)="reload()"
+  >
+    <mat-icon
+      [class.spinning]="
+        performanceService.isRefreshing()
+      "
+    >
+      refresh
+    </mat-icon>
+  </button>
+</section>
+
+<section class="summary-grid">
+  <article>
+    <div class="summary-icon primary">
+      <mat-icon>account_tree</mat-icon>
+    </div>
+
+    <div>
+      <span>Líneas con registros</span>
+
+      <strong>
+        {{ linesWithData() }}
+        /
+        {{
+          performanceService.overview()
+            .length
+        }}
+      </strong>
+    </div>
+  </article>
+
+  <article>
+    <div class="summary-icon success">
+      <mat-icon>
+        precision_manufacturing
+      </mat-icon>
+    </div>
+
+    <div>
+      <span>Producción mensual</span>
+
+      <strong>
+        {{ totalProduced() | number }}
+      </strong>
+    </div>
+  </article>
+
+  <article>
+    <div class="summary-icon warning">
+      <mat-icon>bug_report</mat-icon>
+    </div>
+
+    <div>
+      <span>Defectos mensuales</span>
+
+      <strong>
+        {{ totalDefects() | number }}
+      </strong>
+    </div>
+  </article>
+
+  <article>
+    <div class="summary-icon info">
+      <mat-icon>percent</mat-icon>
+    </div>
+
+    <div>
+      <span>IPD acumulado</span>
+
+      <strong>
+        @if (aggregateIpd() !== null) {
+          {{
+            aggregateIpd()
+              | number:'1.2-4'
+          }}
+          %
+        } @else {
+          —
+        }
+      </strong>
+    </div>
+  </article>
+
+  <article
+    [class.has-alerts]="
+      linesOutsideTarget() > 0
+    "
+  >
+    <div class="summary-icon danger">
+      <mat-icon>warning</mat-icon>
+    </div>
+
+    <div>
+      <span>Fuera del objetivo</span>
+
+      <strong>
+        {{ linesOutsideTarget() }}
+      </strong>
+
+      <small>
+        {{ linesWithinTarget() }}
+        dentro del target
+      </small>
+    </div>
+  </article>
+</section>
+
+@if (isLoading()) {
+  <section class="state-container">
+    <mat-spinner diameter="46"></mat-spinner>
+
+    <span>
+      Calculando rendimiento mensual...
+    </span>
+  </section>
+} @else if (
+  performanceService.errorMessage()
+) {
+  <section class="state-container">
+    <mat-icon>error_outline</mat-icon>
+
+    <h3>
+      No fue posible cargar el rendimiento
+    </h3>
+
+    <p>
+      {{ performanceService.errorMessage() }}
+    </p>
+
+    <button
+      mat-flat-button
+      type="button"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Volver a intentar
+    </button>
+  </section>
+} @else {
+  <section class="overview-section">
+    <header>
+      <div>
+        <span>Comparativo mensual</span>
+
+        <h3>Líneas y modelos</h3>
+      </div>
+
+      <strong>
+        {{ filteredOverview().length }}
+        resultados
+      </strong>
+    </header>
+
+    @if (filteredOverview().length > 0) {
+      <div class="line-cards">
+        @for (
+          line of filteredOverview();
+          track line.lineModelAssignmentId
+        ) {
+          <button
+            type="button"
+            class="line-card"
+            [class.selected]="
+              line.lineModelAssignmentId
+              === selectedLineId()
+            "
+            [class.within-target]="
+              line.isWithinTarget === true
+            "
+            [class.outside-target]="
+              line.isWithinTarget === false
+            "
+            [class.without-data]="
+              line.reportedRecords === 0
+            "
+            (click)="selectLine(line)"
+          >
+            <header>
+              <div>
+                <span class="plant-badge">
+                  {{ line.plantCode }}
+                </span>
+
+                <h4>
+                  {{ line.productionLineName }}
+                </h4>
+
+                <p>
+                  {{ line.productModelName }}
+
+                  @if (line.modelYear) {
+                    · {{ line.modelYear }}
+                  }
+                </p>
+              </div>
+
+              <mat-icon>
+                @if (
+                  line.isWithinTarget === true
+                ) {
+                  check_circle
+                } @else if (
+                  line.isWithinTarget === false
+                ) {
+                  error
+                } @else {
+                  pending
+                }
+              </mat-icon>
+            </header>
+
+            <div class="line-main-metrics">
+              <div>
+                <span>IPD mensual</span>
+
+                <strong>
+                  @if (
+                    line.ipdPercentage !== null
+                  ) {
+                    {{
+                      line.ipdPercentage
+                        | number:'1.2-4'
+                    }}
+                    %
+                  } @else {
+                    —
+                  }
+                </strong>
+              </div>
+
+              <div>
+                <span>Target efectivo</span>
+
+                <strong>
+                  @if (
+                    line.effectiveTargetPercentage
+                      !== null
+                  ) {
+                    {{
+                      line.effectiveTargetPercentage
+                        | number:'1.2-4'
+                    }}
+                    %
+                  } @else {
+                    —
+                  }
+                </strong>
+              </div>
+
+              <div>
+                <span>Cumplimiento</span>
+
+                <strong>
+                  @if (
+                    line.compliancePercentage
+                      !== null
+                  ) {
+                    {{
+                      line.compliancePercentage
+                        | number:'1.0-2'
+                    }}
+                    %
+                  } @else {
+                    —
+                  }
+                </strong>
+              </div>
+            </div>
+
+            <div class="line-secondary-metrics">
+              <span>
+                Producción
+                <strong>
+                  {{
+                    line.producedQuantity
+                      | number
+                  }}
+                </strong>
+              </span>
+
+              <span>
+                Defectos
+                <strong>
+                  {{
+                    line.totalDefects
+                      | number
+                  }}
+                </strong>
+              </span>
+
+              <span>
+                Registros
+                <strong>
+                  {{ line.reportedRecords }}
+                </strong>
+              </span>
+
+              <span>
+                Alertas
+                <strong>
+                  {{
+                    line.outsideTargetRecords
+                  }}
+                </strong>
+              </span>
+            </div>
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="compact-empty">
+        <mat-icon>search_off</mat-icon>
+
+        <span>
+          No existen líneas que coincidan
+          con los filtros.
+        </span>
+      </div>
+    }
+  </section>
+
+  @if (selectedLine(); as line) {
+    <section class="detail-header">
+      <div>
+        <span>Detalle seleccionado</span>
+
+        <h3>
+          {{ line.productionLineName }}
+          ·
+          {{ line.productModelName }}
+        </h3>
+
+        <p>
+          Periodo:
+          {{ monthLabel() }}
+          ·
+          Primer registro:
+          {{
+            formatShortDate(
+              line.firstRecordDate
+            )
+          }}
+          ·
+          Último registro:
+          {{
+            formatShortDate(
+              line.lastRecordDate
+            )
+          }}
+        </p>
+      </div>
+
+      <div
+        class="result-badge"
+        [class.success]="
+          line.isWithinTarget === true
+        "
+        [class.danger]="
+          line.isWithinTarget === false
+        "
+      >
+        <mat-icon>
+          @if (
+            line.isWithinTarget === true
+          ) {
+            verified
+          } @else if (
+            line.isWithinTarget === false
+          ) {
+            warning
+          } @else {
+            info
+          }
+        </mat-icon>
+
+        <div>
+          <span>Resultado mensual</span>
+
+          <strong>
+            @if (
+              line.isWithinTarget === true
+            ) {
+              Dentro del objetivo
+            } @else if (
+              line.isWithinTarget === false
+            ) {
+              Fuera del objetivo
+            } @else {
+              Sin comparación
+            }
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    @if (
+      performanceService.isLoadingDetails()
+    ) {
+      <section class="detail-loading">
+        <mat-spinner diameter="38"></mat-spinner>
+
+        <span>
+          Cargando detalle de la línea...
+        </span>
+      </section>
+    } @else if (
+      performanceService.detailsErrorMessage()
+    ) {
+      <section class="compact-empty">
+        <mat-icon>error_outline</mat-icon>
+
+        <span>
+          {{
+            performanceService
+              .detailsErrorMessage()
+          }}
+        </span>
+      </section>
+    } @else {
+      <section class="details-grid">
+        <article class="detail-card daily-card">
+          <header>
+            <div>
+              <span>Tendencia diaria</span>
+
+              <h3>IPD por día</h3>
+            </div>
+
+            <mat-icon>show_chart</mat-icon>
+          </header>
+
+          <div class="daily-chart">
+            <div class="chart-grid">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <div class="daily-columns">
+              @for (
+                day of
+                  performanceService.daily();
+                track day.productionDate
+              ) {
+                <div
+                  class="daily-column"
+                  [matTooltip]="
+                    formatShortDate(
+                      day.productionDate
+                    )
+                    + ' · IPD: '
+                    + (
+                      day.ipdPercentage
+                      ?? 0
+                    )
+                    + '% · Target: '
+                    + (
+                      day.targetPercentage
+                      ?? 0
+                    )
+                    + '% · Defectos: '
+                    + day.totalDefects
+                  "
+                >
+                  <div class="daily-bar-space">
+                    @if (
+                      day.targetPercentage
+                        !== null
+                    ) {
+                      <span
+                        class="target-marker"
+                        [style.bottom.%]="
+                          dailyTargetHeight(day)
+                        "
+                      ></span>
+                    }
+
+                    <span
+                      class="daily-bar"
+                      [class.alert]="
+                        day.isWithinTarget
+                          === false
+                      "
+                      [class.success]="
+                        day.isWithinTarget
+                          === true
+                      "
+                      [style.height.%]="
+                        dailyBarHeight(day)
+                      "
+                    ></span>
+                  </div>
+
+                  <small>
+                    {{
+                      day.productionDate
+                        .slice(8, 10)
+                    }}
+                  </small>
+                </div>
+              }
+            </div>
+          </div>
+
+          <footer class="chart-legend">
+            <span>
+              <i class="ipd-legend"></i>
+              IPD
+            </span>
+
+            <span>
+              <i class="target-legend"></i>
+              Target
+            </span>
+
+            <span>
+              <i class="alert-legend"></i>
+              Fuera del objetivo
+            </span>
+          </footer>
+        </article>
+
+        <article class="detail-card shift-card">
+          <header>
+            <div>
+              <span>Comparativo</span>
+
+              <h3>Rendimiento por turno</h3>
+            </div>
+
+            <mat-icon>schedule</mat-icon>
+          </header>
+
+          <div class="shift-list">
+            @for (
+              shift of
+                performanceService.byShift();
+              track shift.shiftId
+            ) {
+              <div
+                class="shift-row"
+                [class.success]="
+                  shift.isWithinTarget
+                    === true
+                "
+                [class.danger]="
+                  shift.isWithinTarget
+                    === false
+                "
+              >
+                <div class="shift-code">
+                  {{ shift.shiftCode }}
+                </div>
+
+                <div class="shift-info">
+                  <strong>
+                    {{ shift.shiftName }}
+                  </strong>
+
+                  <span>
+                    {{
+                      shift.producedQuantity
+                        | number
+                    }}
+                    producidos ·
+                    {{
+                      shift.totalDefects
+                        | number
+                    }}
+                    defectos
+                  </span>
+                </div>
+
+                <div class="shift-result">
+                  <strong>
+                    @if (
+                      shift.ipdPercentage
+                        !== null
+                    ) {
+                      {{
+                        shift.ipdPercentage
+                          | number:'1.2-4'
+                      }}
+                      %
+                    } @else {
+                      —
+                    }
+                  </strong>
+
+                  <span>
+                    Target
+                    @if (
+                      shift.targetPercentage
+                        !== null
+                    ) {
+                      {{
+                        shift.targetPercentage
+                          | number:'1.2-4'
+                      }}
+                      %
+                    } @else {
+                      —
+                    }
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <article class="detail-card defect-card">
+          <header>
+            <div>
+              <span>Pareto de la línea</span>
+
+              <h3>Principales defectos</h3>
+            </div>
+
+            <mat-icon>bar_chart</mat-icon>
+          </header>
+
+          @if (
+            performanceService.defects()
+              .length > 0
+          ) {
+            <div class="defect-list">
+              @for (
+                defect of
+                  performanceService.defects();
+                track defect.defectTypeId;
+                let position = $index
+              ) {
+                <div class="defect-row">
+                  <span class="rank">
+                    {{ position + 1 }}
+                  </span>
+
+                  <div class="defect-data">
+                    <div>
+                      <strong>
+                        {{ defect.defectTypeName }}
+                      </strong>
+
+                      <span>
+                        {{ defect.defectTypeCode }}
+                        ·
+                        {{ defect.recordCount }}
+                        registros
+                      </span>
+                    </div>
+
+                    <div class="defect-track">
+                      <span
+                        [style.width.%]="
+                          defectBarWidth(defect)
+                        "
+                      ></span>
+                    </div>
+                  </div>
+
+                  <div class="defect-value">
+                    <strong>
+                      {{ defect.quantity }}
+                    </strong>
+
+                    <span>
+                      {{
+                        defect.percentage
+                          | number:'1.0-2'
+                      }}
+                      %
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="compact-empty">
+              <mat-icon>verified</mat-icon>
+
+              <span>
+                No existen defectos reportados
+                para esta línea.
+              </span>
+            </div>
+          }
+        </article>
+      </section>
+    }
+  }
+}
