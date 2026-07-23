@@ -1655,6 +1655,87 @@ export type Database = {
           version: number
         }[]
       }
+      get_dashboard_daily_trend: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          plant_id_value: string
+          shift_id_value?: string
+        }
+        Returns: {
+          defective_harness_quantity: number
+          ipd_percentage: number
+          outside_target_records: number
+          produced_quantity: number
+          production_date: string
+          reported_records: number
+          total_defects: number
+          within_target_records: number
+        }[]
+      }
+      get_dashboard_recent_alerts: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          plant_id_value: string
+          result_limit_value?: number
+          shift_id_value?: string
+        }
+        Returns: {
+          ipd_percentage: number
+          model_year: number
+          produced_quantity: number
+          product_model_name: string
+          production_date: string
+          production_line_name: string
+          record_id: string
+          shift_code: string
+          shift_name: string
+          supervisor_employee_number: string
+          supervisor_name: string
+          target_difference: number
+          target_percentage: number
+          total_defects: number
+          updated_at: string
+        }[]
+      }
+      get_dashboard_summary: {
+        Args: {
+          plant_id_value: string
+          production_date_value: string
+          shift_id_value?: string
+        }
+        Returns: {
+          completion_percentage: number
+          defective_harness_quantity: number
+          ipd_percentage: number
+          outside_target_combinations: number
+          pending_combinations: number
+          produced_quantity: number
+          reported_combinations: number
+          total_combinations: number
+          total_defects: number
+          within_target_combinations: number
+        }[]
+      }
+      get_dashboard_top_defects: {
+        Args: {
+          date_from_value: string
+          date_to_value: string
+          plant_id_value: string
+          result_limit_value?: number
+          shift_id_value?: string
+        }
+        Returns: {
+          defect_category: string
+          defect_type_code: string
+          defect_type_id: string
+          defect_type_name: string
+          percentage: number
+          quantity: number
+          record_count: number
+        }[]
+      }
       get_live_operation_board: {
         Args: {
           plant_id_value: string

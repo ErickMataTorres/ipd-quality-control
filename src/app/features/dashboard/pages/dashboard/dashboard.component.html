@@ -1,102 +1,674 @@
+<section class="dashboard-toolbar">
+  <div>
+    <span>Resumen ejecutivo</span>
+
+    <h2>Panel principal</h2>
+
+    <p>
+      Consulta producción, defectos, avance de
+      captura y cumplimiento del IPD.
+    </p>
+  </div>
+
+  <div class="toolbar-filters">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Planta</mat-label>
+
+      <mat-icon matPrefix>
+        factory
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedPlantId()"
+        (selectionChange)="
+          selectedPlantId.set($event.value);
+          handleFilterChange()
+        "
+      >
+        @for (
+          plant of plantsService.plants();
+          track plant.id
+        ) {
+          @if (plant.active) {
+            <mat-option [value]="plant.id">
+              {{ plant.code }} · {{ plant.name }}
+            </mat-option>
+          }
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Turno</mat-label>
+
+      <mat-icon matPrefix>
+        schedule
+      </mat-icon>
+
+      <mat-select
+        [value]="selectedShiftId()"
+        (selectionChange)="
+          selectedShiftId.set($event.value);
+          handleFilterChange()
+        "
+      >
+        <mat-option value="all">
+          Todos los turnos
+        </mat-option>
+
+        @for (
+          shift of shiftsService.shifts();
+          track shift.id
+        ) {
+          @if (shift.active) {
+            <mat-option [value]="shift.id">
+              {{ shift.code }} · {{ shift.name }}
+            </mat-option>
+          }
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Fecha</mat-label>
+
+      <mat-icon matPrefix>
+        calendar_today
+      </mat-icon>
+
+      <input
+        matInput
+        type="date"
+        [value]="selectedDate()"
+        (change)="
+          selectedDate.set(
+            $any($event.target).value
+          );
+          handleFilterChange()
+        "
+      />
+    </mat-form-field>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar panel"
+      [disabled]="
+        isLoading()
+        || dashboardService.isRefreshing()
+      "
+      (click)="reload()"
+    >
+      <mat-icon
+        [class.spinning]="
+          dashboardService.isRefreshing()
+        "
+      >
+        refresh
+      </mat-icon>
+    </button>
+  </div>
+</section>
+
 <section class="welcome-banner">
   <div>
     <span>Resumen general</span>
 
-    <h2>
+    <h3>
       Bienvenido,
       {{ userProfileService.fullName() }}
-    </h2>
+    </h3>
 
     <p>
-      Consulta el estado actual de producción,
-      defectos y cumplimiento del IPD.
+      {{ selectedDateLabel() }}
+      ·
+      {{ realtimeLabel() }}
     </p>
   </div>
 
-  <div class="welcome-icon">
-    <mat-icon>analytics</mat-icon>
+  <div class="welcome-actions">
+    <a
+      mat-stroked-button
+      routerLink="/live-operations"
+    >
+      <mat-icon>monitoring</mat-icon>
+      Ver operación
+    </a>
+
+    <a
+      mat-flat-button
+      routerLink="/daily-entries"
+    >
+      <mat-icon>edit_note</mat-icon>
+      Registrar datos
+    </a>
   </div>
 </section>
 
-<section class="kpi-grid">
-  <article class="kpi-card">
-    <div class="kpi-icon primary">
-      <mat-icon>percent</mat-icon>
-    </div>
+@if (isLoading()) {
+  <section class="state-container">
+    <mat-spinner diameter="46"></mat-spinner>
 
-    <span>IPD del día</span>
-    <strong>--</strong>
-    <small>Sin registros todavía</small>
-  </article>
+    <span>
+      Cargando indicadores del panel...
+    </span>
+  </section>
+} @else if (
+  dashboardService.errorMessage()
+) {
+  <section class="state-container">
+    <mat-icon>error_outline</mat-icon>
 
-  <article class="kpi-card">
-    <div class="kpi-icon success">
-      <mat-icon>precision_manufacturing</mat-icon>
-    </div>
+    <h3>
+      No fue posible cargar el panel
+    </h3>
 
-    <span>Arneses producidos</span>
-    <strong>--</strong>
-    <small>Producción total del día</small>
-  </article>
+    <p>
+      {{ dashboardService.errorMessage() }}
+    </p>
 
-  <article class="kpi-card">
-    <div class="kpi-icon warning">
-      <mat-icon>report_problem</mat-icon>
-    </div>
-
-    <span>Total de defectos</span>
-    <strong>--</strong>
-    <small>Defectos registrados hoy</small>
-  </article>
-
-  <article class="kpi-card">
-    <div class="kpi-icon info">
-      <mat-icon>pending_actions</mat-icon>
-    </div>
-
-    <span>Líneas pendientes</span>
-    <strong>--</strong>
-    <small>Capturas pendientes del día</small>
-  </article>
-</section>
-
-<section class="dashboard-grid">
-  <article class="dashboard-card large-card">
-    <header>
-      <div>
-        <span>Tendencia</span>
-        <h3>IPD diario</h3>
+    <button
+      mat-flat-button
+      type="button"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Volver a intentar
+    </button>
+  </section>
+} @else if (
+  dashboardService.summary();
+  as summary
+) {
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <div class="kpi-icon primary">
+        <mat-icon>percent</mat-icon>
       </div>
 
-      <mat-icon>show_chart</mat-icon>
-    </header>
-
-    <div class="empty-state">
-      <mat-icon>query_stats</mat-icon>
-
-      <p>
-        La gráfica aparecerá cuando existan
-        registros diarios.
-      </p>
-    </div>
-  </article>
-
-  <article class="dashboard-card">
-    <header>
       <div>
-        <span>Seguimiento</span>
-        <h3>Estado de líneas</h3>
+        <span>IPD del día</span>
+
+        <strong>
+          @if (
+            summary.ipdPercentage !== null
+          ) {
+            {{
+              summary.ipdPercentage
+                | number:'1.2-4'
+            }}
+            %
+          } @else {
+            —
+          }
+        </strong>
+
+        <small>
+          {{
+            summary.totalDefects
+          }}
+          defectos /
+          {{
+            summary.producedQuantity
+          }}
+          arneses
+        </small>
+      </div>
+    </article>
+
+    <article class="kpi-card">
+      <div class="kpi-icon success">
+        <mat-icon>
+          precision_manufacturing
+        </mat-icon>
       </div>
 
-      <mat-icon>fact_check</mat-icon>
-    </header>
+      <div>
+        <span>Arneses producidos</span>
 
-    <div class="empty-state">
-      <mat-icon>storage</mat-icon>
+        <strong>
+          {{
+            summary.producedQuantity
+              | number
+          }}
+        </strong>
 
-      <p>
-        Todavía no existen líneas configuradas.
-      </p>
-    </div>
-  </article>
-</section>
+        <small>
+          {{
+            summary.defectiveHarnessQuantity
+              | number
+          }}
+          arneses defectuosos
+        </small>
+      </div>
+    </article>
+
+    <article class="kpi-card">
+      <div class="kpi-icon warning">
+        <mat-icon>bug_report</mat-icon>
+      </div>
+
+      <div>
+        <span>Total de defectos</span>
+
+        <strong>
+          {{
+            summary.totalDefects
+              | number
+          }}
+        </strong>
+
+        <small>
+          Capturados en registros reportados
+        </small>
+      </div>
+    </article>
+
+    <article class="kpi-card">
+      <div class="kpi-icon info">
+        <mat-icon>pending_actions</mat-icon>
+      </div>
+
+      <div>
+        <span>Líneas pendientes</span>
+
+        <strong>
+          {{ summary.pendingCombinations }}
+        </strong>
+
+        <small>
+          {{
+            summary.reportedCombinations
+          }}
+          combinaciones reportadas
+        </small>
+      </div>
+    </article>
+
+    <article
+      class="kpi-card"
+      [class.alert-kpi]="
+        summary.outsideTargetCombinations
+          > 0
+      "
+    >
+      <div class="kpi-icon danger">
+        <mat-icon>warning</mat-icon>
+      </div>
+
+      <div>
+        <span>Fuera del objetivo</span>
+
+        <strong>
+          {{
+            summary.outsideTargetCombinations
+          }}
+        </strong>
+
+        <small>
+          {{
+            summary.withinTargetCombinations
+          }}
+          dentro del target
+        </small>
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="dashboard-card trend-card">
+      <header>
+        <div>
+          <span>Tendencia</span>
+
+          <h3>IPD de los últimos 14 días</h3>
+        </div>
+
+        <mat-icon>show_chart</mat-icon>
+      </header>
+
+      @if (
+        dashboardService.trend().length
+          > 0
+      ) {
+        <div class="trend-chart">
+          <div class="chart-grid-lines">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+
+          <div class="chart-bars">
+            @for (
+              point of dashboardService.trend();
+              track point.productionDate
+            ) {
+              <div
+                class="chart-column"
+                [matTooltip]="
+                  point.productionDate
+                  + ' · IPD: '
+                  + (
+                    point.ipdPercentage
+                      ?? 0
+                  )
+                  + '% · Defectos: '
+                  + point.totalDefects
+                "
+              >
+                <div class="bar-space">
+                  <div
+                    class="trend-bar"
+                    [class.has-alert]="
+                      point.outsideTargetRecords
+                        > 0
+                    "
+                    [style.height.%]="
+                      trendBarHeight(point)
+                    "
+                  ></div>
+                </div>
+
+                <span>
+                  {{
+                    point.productionDate
+                      | date:'dd/MM'
+                  }}
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <footer class="chart-legend">
+          <span>
+            <i class="legend-normal"></i>
+            IPD diario
+          </span>
+
+          <span>
+            <i class="legend-alert"></i>
+            Con registros fuera de target
+          </span>
+        </footer>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>query_stats</mat-icon>
+
+          <p>
+            La tendencia aparecerá cuando
+            existan registros enviados.
+          </p>
+        </div>
+      }
+    </article>
+
+    <article class="dashboard-card capture-card">
+      <header>
+        <div>
+          <span>Seguimiento</span>
+
+          <h3>Avance de captura</h3>
+        </div>
+
+        <mat-icon>fact_check</mat-icon>
+      </header>
+
+      <div class="progress-circle">
+        <div
+          class="progress-ring"
+          [style.--progress]="
+            summary.completionPercentage
+          "
+        >
+          <div>
+            <strong>
+              {{
+                summary.completionPercentage
+                  | number:'1.0-0'
+              }}
+              %
+            </strong>
+
+            <span>
+              {{ reportedRatioLabel() }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-list">
+        <div>
+          <span class="status-dot reported"></span>
+
+          <span>Reportadas</span>
+
+          <strong>
+            {{ summary.reportedCombinations }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="status-dot pending"></span>
+
+          <span>Pendientes</span>
+
+          <strong>
+            {{ summary.pendingCombinations }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="status-dot success"></span>
+
+          <span>Dentro del target</span>
+
+          <strong>
+            {{
+              summary.withinTargetCombinations
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="status-dot danger"></span>
+
+          <span>Fuera del target</span>
+
+          <strong>
+            {{
+              summary.outsideTargetCombinations
+            }}
+          </strong>
+        </div>
+      </div>
+    </article>
+
+    <article class="dashboard-card defects-card">
+      <header>
+        <div>
+          <span>Pareto</span>
+
+          <h3>Principales defectos</h3>
+        </div>
+
+        <mat-icon>bar_chart</mat-icon>
+      </header>
+
+      @if (
+        dashboardService.topDefects()
+          .length > 0
+      ) {
+        <div class="defect-list">
+          @for (
+            defect of
+              dashboardService.topDefects();
+            track defect.defectTypeId;
+            let position = $index
+          ) {
+            <div class="defect-row">
+              <span class="rank">
+                {{ position + 1 }}
+              </span>
+
+              <div class="defect-content">
+                <div>
+                  <strong>
+                    {{ defect.defectTypeName }}
+                  </strong>
+
+                  <span>
+                    {{ defect.defectTypeCode }}
+                    ·
+                    {{ defect.recordCount }}
+                    registros
+                  </span>
+                </div>
+
+                <div class="defect-bar-track">
+                  <span
+                    [style.width.%]="
+                      defectBarWidth(defect)
+                    "
+                  ></span>
+                </div>
+              </div>
+
+              <div class="defect-value">
+                <strong>
+                  {{ defect.quantity }}
+                </strong>
+
+                <span>
+                  {{
+                    defect.percentage
+                      | number:'1.0-2'
+                  }}
+                  %
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state compact">
+          <mat-icon>verified</mat-icon>
+
+          <p>
+            No existen defectos reportados
+            en el periodo analizado.
+          </p>
+        </div>
+      }
+    </article>
+
+    <article class="dashboard-card alerts-card">
+      <header>
+        <div>
+          <span>Alertas recientes</span>
+
+          <h3>Líneas fuera del objetivo</h3>
+        </div>
+
+        <mat-icon>notification_important</mat-icon>
+      </header>
+
+      @if (
+        dashboardService.recentAlerts()
+          .length > 0
+      ) {
+        <div class="alerts-list">
+          @for (
+            alert of
+              dashboardService.recentAlerts();
+            track alert.recordId
+          ) {
+            <div class="alert-row">
+              <div class="alert-icon">
+                <mat-icon>warning</mat-icon>
+              </div>
+
+              <div class="alert-content">
+                <strong>
+                  {{ alert.productionLineName }}
+                  ·
+                  {{ alert.shiftCode }}
+                </strong>
+
+                <span>
+                  {{ alert.productModelName }}
+                  ·
+                  {{ alert.supervisorName }}
+                </span>
+
+                <small>
+                  {{
+                    alert.productionDate
+                      | date:'dd/MM/yyyy'
+                  }}
+                </small>
+              </div>
+
+              <div class="alert-values">
+                <strong>
+                  {{
+                    alert.ipdPercentage
+                      | number:'1.2-4'
+                  }}
+                  %
+                </strong>
+
+                <span>
+                  Target
+                  {{
+                    alert.targetPercentage
+                      | number:'1.2-4'
+                  }}
+                  %
+                </span>
+
+                <small>
+                  +
+                  {{
+                    alert.targetDifference
+                      | number:'1.2-4'
+                  }}
+                </small>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state compact">
+          <mat-icon>task_alt</mat-icon>
+
+          <p>
+            No hay alertas de IPD en el
+            periodo analizado.
+          </p>
+        </div>
+      }
+    </article>
+  </section>
+} @else {
+  <section class="state-container">
+    <mat-icon>dashboard</mat-icon>
+
+    <h3>Sin información disponible</h3>
+
+    <p>
+      Selecciona una planta válida para
+      consultar el panel.
+    </p>
+  </section>
+}
