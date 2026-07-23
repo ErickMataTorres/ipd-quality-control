@@ -144,18 +144,25 @@ export const routes: Routes = [
         component.LinePerformanceComponent,
     ),
 },
-      {
-        path: 'defect-analysis',
-        title:
-          'Análisis de defectos · IPD Quality',
-        data: {
-          pageTitle: 'Análisis de defectos',
-          icon: 'bug_report',
-          description:
-            'Pareto, distribución y tendencias de los diferentes tipos de defecto.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'defect-analysis',
+  title: 'Análisis de defectos · IPD Quality',
+
+  data: {
+    pageTitle: 'Análisis de defectos',
+    icon: 'bug_report',
+    description:
+      'Pareto, distribución y tendencias de los diferentes tipos de defecto.',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/defect-analysis/pages/defect-analysis/defect-analysis.component'
+    ).then(
+      component =>
+        component.DefectAnalysisComponent,
+    ),
+},
       {
         path: 'reports',
         title: 'Reportes · IPD Quality',

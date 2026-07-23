@@ -1,0 +1,1065 @@
+<section class="page-header">
+  <div>
+    <span>Calidad del producto</span>
+
+    <h2>Análisis de defectos</h2>
+
+    <p>
+      Identifica los defectos prioritarios,
+      su tendencia y las áreas de mayor impacto.
+    </p>
+  </div>
+
+  <div class="realtime-status">
+    <span
+      [class.connected]="
+        analysisService.realtimeStatus()
+          === 'connected'
+      "
+    ></span>
+
+    <div>
+      <strong>
+        {{ realtimeLabel() }}
+      </strong>
+
+      @if (
+        analysisService.lastLoadedAt();
+        as lastLoadedAt
+      ) {
+        <small>
+          Última carga
+          {{
+            lastLoadedAt
+              .toLocaleTimeString(
+                'es-MX'
+              )
+          }}
+        </small>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="filters-card">
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Planta</mat-label>
+
+    <mat-icon matPrefix>
+      factory
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPlantId()"
+      (selectionChange)="
+        handlePlantChange($event.value)
+      "
+    >
+      @for (
+        plant of plantsService.plants();
+        track plant.id
+      ) {
+        @if (plant.active) {
+          <mat-option [value]="plant.id">
+            {{ plant.code }} · {{ plant.name }}
+          </mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Turno</mat-label>
+
+    <mat-icon matPrefix>
+      schedule
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedShiftId()"
+      (selectionChange)="
+        selectedShiftId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todos los turnos
+      </mat-option>
+
+      @for (
+        shift of shiftsService.shifts();
+        track shift.id
+      ) {
+        @if (shift.active) {
+          <mat-option [value]="shift.id">
+            {{ shift.code }} · {{ shift.name }}
+          </mat-option>
+        }
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Línea y modelo</mat-label>
+
+    <mat-icon matPrefix>
+      account_tree
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedLineId()"
+      (selectionChange)="
+        selectedLineId.set($event.value);
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todas las líneas
+      </mat-option>
+
+      @for (
+        line of
+          analysisService.lineOptions();
+        track line.id
+      ) {
+        <mat-option [value]="line.id">
+          {{ line.productionLineName }}
+          ·
+          {{ line.productModelName }}
+
+          @if (line.modelYear) {
+            · {{ line.modelYear }}
+          }
+
+          @if (!line.active) {
+            · Inactiva
+          }
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Tipo de defecto</mat-label>
+
+    <mat-icon matPrefix>
+      bug_report
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedDefectTypeId()"
+      (selectionChange)="
+        selectedDefectTypeId.set(
+          $event.value
+        );
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todos los defectos
+      </mat-option>
+
+      @for (
+        defectType of
+          analysisService
+            .defectTypeOptions();
+        track defectType.id
+      ) {
+        <mat-option [value]="defectType.id">
+          {{ defectType.name }}
+          ·
+          {{ defectType.code }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Periodo rápido</mat-label>
+
+    <mat-icon matPrefix>
+      date_range
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPreset()"
+      (selectionChange)="
+        applyPreset($event.value)
+      "
+    >
+      <mat-option value="current_month">
+        Mes actual
+      </mat-option>
+
+      <mat-option value="last_7">
+        Últimos 7 días
+      </mat-option>
+
+      <mat-option value="last_30">
+        Últimos 30 días
+      </mat-option>
+
+      <mat-option value="last_90">
+        Últimos 90 días
+      </mat-option>
+
+      <mat-option value="custom">
+        Personalizado
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Desde</mat-label>
+
+    <input
+      matInput
+      type="date"
+      [value]="dateFrom()"
+      (change)="
+        handleDateChange(
+          'from',
+          $event
+        )
+      "
+    />
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Hasta</mat-label>
+
+    <input
+      matInput
+      type="date"
+      [value]="dateTo()"
+      (change)="
+        handleDateChange(
+          'to',
+          $event
+        )
+      "
+    />
+  </mat-form-field>
+
+  <button
+    mat-icon-button
+    type="button"
+    matTooltip="Actualizar análisis"
+    [disabled]="
+      isLoading()
+      || analysisService.isRefreshing()
+    "
+    (click)="reload()"
+  >
+    <mat-icon
+      [class.spinning]="
+        analysisService.isRefreshing()
+      "
+    >
+      refresh
+    </mat-icon>
+  </button>
+</section>
+
+<section class="period-banner">
+  <div>
+    <mat-icon>calendar_month</mat-icon>
+
+    <div>
+      <span>Periodo analizado</span>
+
+      <strong>
+        {{ periodLabel() }}
+      </strong>
+    </div>
+  </div>
+
+  <div>
+    <span>Filtros activos</span>
+
+    <strong>
+      @if (selectedLineId() !== 'all') {
+        Línea específica
+      } @else {
+        Todas las líneas
+      }
+
+      ·
+
+      @if (
+        selectedDefectTypeId() !== 'all'
+      ) {
+        Defecto específico
+      } @else {
+        Todos los defectos
+      }
+    </strong>
+  </div>
+</section>
+
+@if (isLoading()) {
+  <section class="state-container">
+    <mat-spinner diameter="46"></mat-spinner>
+
+    <span>
+      Analizando defectos y tendencias...
+    </span>
+  </section>
+} @else if (
+  analysisService.errorMessage()
+) {
+  <section class="state-container">
+    <mat-icon>error_outline</mat-icon>
+
+    <h3>
+      No fue posible cargar el análisis
+    </h3>
+
+    <p>
+      {{ analysisService.errorMessage() }}
+    </p>
+
+    <button
+      mat-flat-button
+      type="button"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Volver a intentar
+    </button>
+  </section>
+} @else if (
+  analysisService.summary();
+  as summary
+) {
+  <section class="summary-grid">
+    <article>
+      <div class="summary-icon danger">
+        <mat-icon>bug_report</mat-icon>
+      </div>
+
+      <div>
+        <span>Total de defectos</span>
+
+        <strong>
+          {{ summary.totalDefects | number }}
+        </strong>
+
+        <small>
+          {{
+            summary.distinctDefectTypes
+          }}
+          tipos diferentes
+        </small>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon primary">
+        <mat-icon>percent</mat-icon>
+      </div>
+
+      <div>
+        <span>IPD de defectos</span>
+
+        <strong>
+          @if (
+            summary.defectIpdPercentage
+              !== null
+          ) {
+            {{
+              summary.defectIpdPercentage
+                | number:'1.2-4'
+            }}
+            %
+          } @else {
+            —
+          }
+        </strong>
+
+        <small>
+          Sobre
+          {{
+            summary.producedQuantity
+              | number
+          }}
+          arneses
+        </small>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon warning">
+        <mat-icon>assignment_late</mat-icon>
+      </div>
+
+      <div>
+        <span>Registros afectados</span>
+
+        <strong>
+          {{ summary.affectedRecords }}
+          /
+          {{ summary.totalRecords }}
+        </strong>
+
+        <small>
+          {{
+            summary.averageDefectsPerAffectedRecord
+              | number:'1.0-2'
+          }}
+          defectos por registro
+        </small>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon info">
+        <mat-icon>cable</mat-icon>
+      </div>
+
+      <div>
+        <span>Arneses defectuosos</span>
+
+        <strong>
+          {{
+            summary.defectiveHarnessQuantity
+              | number
+          }}
+        </strong>
+
+        <small>
+          @if (
+            summary.defectiveHarnessPercentage
+              !== null
+          ) {
+            {{
+              summary.defectiveHarnessPercentage
+                | number:'1.2-4'
+            }}
+            % de la producción
+          } @else {
+            Sin producción
+          }
+        </small>
+      </div>
+    </article>
+
+    <article class="top-defect-card">
+      <div class="summary-icon success">
+        <mat-icon>workspace_premium</mat-icon>
+      </div>
+
+      <div>
+        <span>Defecto principal</span>
+
+        <strong>
+          {{
+            summary.topDefectTypeName
+            ?? 'Sin defectos'
+          }}
+        </strong>
+
+        <small>
+          @if (summary.topDefectTypeCode) {
+            {{ summary.topDefectTypeCode }}
+            ·
+            {{
+              summary.topDefectQuantity
+                | number
+            }}
+          } @else {
+            Sin información en el periodo
+          }
+        </small>
+      </div>
+    </article>
+  </section>
+
+  <section class="analysis-grid">
+    <article class="analysis-card pareto-card">
+      <header>
+        <div>
+          <span>Principio 80/20</span>
+
+          <h3>Pareto de defectos</h3>
+        </div>
+
+        <mat-icon>leaderboard</mat-icon>
+      </header>
+
+      @if (
+        analysisService.pareto().length
+          > 0
+      ) {
+        <div class="pareto-chart">
+          <div class="pareto-grid-lines">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+
+          <svg
+            class="pareto-line"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <polyline
+              [attr.points]="
+                paretoLinePoints()
+              "
+            ></polyline>
+          </svg>
+
+          <div class="pareto-columns">
+            @for (
+              item of
+                analysisService.pareto();
+              track item.defectTypeId;
+              let position = $index
+            ) {
+              <div
+                class="pareto-column"
+                [matTooltip]="
+                  item.defectTypeName
+                  + ' · '
+                  + item.quantity
+                  + ' defectos · '
+                  + item.percentage
+                  + '% · Acumulado '
+                  + item.cumulativePercentage
+                  + '%'
+                "
+              >
+                <span class="pareto-value">
+                  {{ item.quantity }}
+                </span>
+
+                <div class="pareto-bar-space">
+                  <span
+                    class="pareto-bar"
+                    [style.height.%]="
+                      paretoBarHeight(item)
+                    "
+                  ></span>
+                </div>
+
+                <span class="pareto-code">
+                  {{ position + 1 }}
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="pareto-list">
+          @for (
+            item of
+              analysisService.pareto();
+            track item.defectTypeId;
+            let position = $index
+          ) {
+            <div>
+              <span class="rank">
+                {{ position + 1 }}
+              </span>
+
+              <div>
+                <strong>
+                  {{ item.defectTypeName }}
+                </strong>
+
+                <small>
+                  {{ item.defectTypeCode }}
+                  ·
+                  {{
+                    item.affectedRecords
+                  }}
+                  registros
+                </small>
+              </div>
+
+              <span>
+                {{ item.quantity }}
+                ·
+                {{
+                  item.percentage
+                    | number:'1.0-2'
+                }}
+                %
+              </span>
+
+              <strong>
+                Acum.
+                {{
+                  item.cumulativePercentage
+                    | number:'1.0-2'
+                }}
+                %
+              </strong>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>verified</mat-icon>
+
+          <p>
+            No existen defectos para generar
+            el Pareto del periodo.
+          </p>
+        </div>
+      }
+    </article>
+
+    <article class="analysis-card shift-card">
+      <header>
+        <div>
+          <span>Distribución</span>
+
+          <h3>Defectos por turno</h3>
+        </div>
+
+        <mat-icon>schedule</mat-icon>
+      </header>
+
+      @if (
+        analysisService.byShift().length
+          > 0
+      ) {
+        <div class="shift-list">
+          @for (
+            shift of
+              analysisService.byShift();
+            track shift.shiftId
+          ) {
+            <div class="shift-row">
+              <span class="shift-code">
+                {{ shift.shiftCode }}
+              </span>
+
+              <div>
+                <strong>
+                  {{ shift.shiftName }}
+                </strong>
+
+                <small>
+                  {{
+                    shift.producedQuantity
+                      | number
+                  }}
+                  producidos ·
+                  {{
+                    shift.affectedRecords
+                  }}
+                  registros
+                </small>
+
+                <div class="distribution-track">
+                  <span
+                    [style.width.%]="
+                      shift
+                        .percentageOfTotalDefects
+                    "
+                  ></span>
+                </div>
+              </div>
+
+              <div class="shift-values">
+                <strong>
+                  {{
+                    shift.totalDefects
+                      | number
+                  }}
+                </strong>
+
+                <span>
+                  {{
+                    shift
+                      .percentageOfTotalDefects
+                      | number:'1.0-2'
+                  }}
+                  %
+                </span>
+
+                <small>
+                  IPD
+                  @if (
+                    shift.defectIpdPercentage
+                      !== null
+                  ) {
+                    {{
+                      shift
+                        .defectIpdPercentage
+                        | number:'1.2-4'
+                    }}
+                    %
+                  } @else {
+                    —
+                  }
+                </small>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state compact">
+          <mat-icon>schedule</mat-icon>
+
+          <p>
+            Sin distribución por turno.
+          </p>
+        </div>
+      }
+    </article>
+
+    <article class="analysis-card trend-card">
+      <header>
+        <div>
+          <span>Comportamiento</span>
+
+          <h3>Tendencia diaria</h3>
+        </div>
+
+        <mat-icon>show_chart</mat-icon>
+      </header>
+
+      @if (
+        analysisService.trend().length
+          > 0
+      ) {
+        <div class="trend-scroll">
+          <div
+            class="trend-chart"
+            [style.--trend-count]="
+              analysisService.trend().length
+            "
+          >
+            <div class="trend-grid-lines">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <div class="trend-columns">
+              @for (
+                day of
+                  analysisService.trend();
+                track day.productionDate
+              ) {
+                <div
+                  class="trend-column"
+                  [matTooltip]="
+                    formatDate(
+                      day.productionDate
+                    )
+                    + ' · '
+                    + day.totalDefects
+                    + ' defectos · IPD '
+                    + (
+                      day.defectIpdPercentage
+                      ?? 0
+                    )
+                    + '%'
+                  "
+                >
+                  <span class="trend-value">
+                    {{ day.totalDefects }}
+                  </span>
+
+                  <div class="trend-bar-space">
+                    <span
+                      class="trend-bar"
+                      [class.has-defects]="
+                        day.totalDefects > 0
+                      "
+                      [style.height.%]="
+                        trendBarHeight(day)
+                      "
+                    ></span>
+                  </div>
+
+                  <small>
+                    {{
+                      day.productionDate
+                        .slice(5)
+                    }}
+                  </small>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <mat-icon>query_stats</mat-icon>
+
+          <p>
+            Sin datos para mostrar la tendencia.
+          </p>
+        </div>
+      }
+    </article>
+
+    <article class="analysis-card lines-card">
+      <header>
+        <div>
+          <span>Concentración</span>
+
+          <h3>Defectos por línea</h3>
+        </div>
+
+        <mat-icon>account_tree</mat-icon>
+      </header>
+
+      @if (
+        analysisService.byLine().length
+          > 0
+      ) {
+        <div class="line-list">
+          @for (
+            line of
+              analysisService.byLine();
+            track line.lineModelAssignmentId;
+            let position = $index
+          ) {
+            <div class="line-row">
+              <span class="rank">
+                {{ position + 1 }}
+              </span>
+
+              <div class="line-data">
+                <div>
+                  <strong>
+                    {{ line.productionLineName }}
+                  </strong>
+
+                  <small>
+                    {{ line.productModelName }}
+
+                    @if (line.modelYear) {
+                      · {{ line.modelYear }}
+                    }
+                  </small>
+                </div>
+
+                <div class="line-track">
+                  <span
+                    [style.width.%]="
+                      lineBarWidth(line)
+                    "
+                  ></span>
+                </div>
+              </div>
+
+              <div class="line-values">
+                <strong>
+                  {{
+                    line.totalDefects
+                      | number
+                  }}
+                </strong>
+
+                <span>
+                  {{
+                    line.percentageOfTotalDefects
+                      | number:'1.0-2'
+                  }}
+                  %
+                </span>
+
+                <small>
+                  IPD
+                  @if (
+                    line.defectIpdPercentage
+                      !== null
+                  ) {
+                    {{
+                      line
+                        .defectIpdPercentage
+                        | number:'1.2-4'
+                    }}
+                    %
+                  } @else {
+                    —
+                  }
+                </small>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state compact">
+          <mat-icon>factory</mat-icon>
+
+          <p>
+            Sin distribución por línea.
+          </p>
+        </div>
+      }
+    </article>
+  </section>
+
+  <section class="occurrences-card">
+    <header>
+      <div>
+        <span>Trazabilidad</span>
+
+        <h3>Ocurrencias de defectos</h3>
+
+        <p>
+          Se muestran hasta 100 detalles
+          del periodo seleccionado.
+        </p>
+      </div>
+
+      <mat-form-field
+        appearance="outline"
+        subscriptSizing="dynamic"
+      >
+        <mat-label>
+          Buscar en resultados
+        </mat-label>
+
+        <mat-icon matPrefix>
+          search
+        </mat-icon>
+
+        <input
+          matInput
+          [value]="occurrenceSearch()"
+          placeholder="Defecto, línea o supervisor"
+          (input)="
+            updateOccurrenceSearch($event)
+          "
+        />
+
+        @if (occurrenceSearch()) {
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            aria-label="Limpiar búsqueda"
+            (click)="clearOccurrenceSearch()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+    </header>
+
+    @if (
+      filteredOccurrences().length > 0
+    ) {
+      <div class="occurrences-table">
+        <div class="occurrence-header">
+          <span>Fecha</span>
+          <span>Línea / modelo</span>
+          <span>Turno</span>
+          <span>Defecto</span>
+          <span>Cantidad</span>
+          <span>Supervisor</span>
+          <span>Comentario</span>
+        </div>
+
+        @for (
+          item of filteredOccurrences();
+          track item.detailId
+        ) {
+          <div class="occurrence-row">
+            <span data-label="Fecha">
+              {{ formatDate(item.productionDate) }}
+            </span>
+
+            <span data-label="Línea / modelo">
+              <strong>
+                {{ item.productionLineName }}
+              </strong>
+
+              <small>
+                {{ item.productModelName }}
+
+                @if (item.modelYear) {
+                  · {{ item.modelYear }}
+                }
+              </small>
+            </span>
+
+            <span data-label="Turno">
+              {{ item.shiftCode }}
+            </span>
+
+            <span data-label="Defecto">
+              <strong>
+                {{ item.defectTypeName }}
+              </strong>
+
+              <small>
+                {{ item.defectTypeCode }}
+              </small>
+            </span>
+
+            <span
+              data-label="Cantidad"
+              class="quantity-cell"
+            >
+              {{ item.quantity }}
+            </span>
+
+            <span data-label="Supervisor">
+              <strong>
+                {{ item.supervisorName }}
+              </strong>
+
+              <small>
+                {{
+                  item.supervisorEmployeeNumber
+                }}
+              </small>
+            </span>
+
+            <span data-label="Comentario">
+              {{
+                item.defectComment
+                ?? item.recordComment
+                ?? 'Sin comentario'
+              }}
+            </span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state compact">
+        <mat-icon>search_off</mat-icon>
+
+        <p>
+          No existen ocurrencias que coincidan
+          con los filtros y la búsqueda.
+        </p>
+      </div>
+    }
+  </section>
+}
