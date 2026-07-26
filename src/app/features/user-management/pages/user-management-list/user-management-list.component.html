@@ -1,0 +1,586 @@
+<section class="page-header">
+  <div>
+    <span>Seguridad y acceso</span>
+
+    <h2>Administración de usuarios</h2>
+
+    <p>
+      Crea cuentas, vincula empleados,
+      asigna roles y controla el acceso
+      a las plantas.
+    </p>
+  </div>
+
+  <button
+    mat-flat-button
+    type="button"
+    [disabled]="
+      userManagementService.isSaving()
+    "
+    (click)="openCreateDialog()"
+  >
+    <mat-icon>person_add</mat-icon>
+    Crear usuario
+  </button>
+</section>
+
+<section class="summary-grid">
+  <article>
+    <div class="summary-icon primary">
+      <mat-icon>group</mat-icon>
+    </div>
+
+    <div>
+      <span>Total</span>
+
+      <strong>
+        {{ totalUsers() }}
+      </strong>
+    </div>
+  </article>
+
+  <article>
+    <div class="summary-icon success">
+      <mat-icon>verified_user</mat-icon>
+    </div>
+
+    <div>
+      <span>Activos</span>
+
+      <strong>
+        {{ activeUsers() }}
+      </strong>
+    </div>
+  </article>
+
+  <article>
+    <div class="summary-icon muted">
+      <mat-icon>person_off</mat-icon>
+    </div>
+
+    <div>
+      <span>Inactivos</span>
+
+      <strong>
+        {{ inactiveUsers() }}
+      </strong>
+    </div>
+  </article>
+
+  <article>
+    <div class="summary-icon warning">
+      <mat-icon>admin_panel_settings</mat-icon>
+    </div>
+
+    <div>
+      <span>Administradores</span>
+
+      <strong>
+        {{ administratorUsers() }}
+      </strong>
+    </div>
+  </article>
+
+  <article
+    [class.has-alert]="
+      unconfiguredUsers() > 0
+    "
+  >
+    <div class="summary-icon info">
+      <mat-icon>manage_accounts</mat-icon>
+    </div>
+
+    <div>
+      <span>Sin configurar</span>
+
+      <strong>
+        {{ unconfiguredUsers() }}
+      </strong>
+    </div>
+  </article>
+</section>
+
+<section class="security-notice">
+  <mat-icon>security</mat-icon>
+
+  <div>
+    <strong>
+      La cuenta de Auth y el perfil de aplicación
+      se administran juntos.
+    </strong>
+
+    <span>
+      Los usuarios desactivados quedan bloqueados
+      para iniciar sesión, pero se conservan sus
+      registros y movimientos históricos.
+    </span>
+  </div>
+</section>
+
+<section class="table-card">
+  <header class="table-toolbar">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+      class="search-field"
+    >
+      <mat-label>Buscar usuario</mat-label>
+
+      <mat-icon matPrefix>
+        search
+      </mat-icon>
+
+      <input
+        matInput
+        [value]="searchTerm()"
+        placeholder="Nombre, correo, reloj, puesto o planta"
+        (input)="updateSearch($event)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Limpiar búsqueda"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Rol</mat-label>
+
+      <mat-select
+        [value]="selectedRole()"
+        (selectionChange)="
+          selectedRole.set($event.value)
+        "
+      >
+        <mat-option value="all">
+          Todos los roles
+        </mat-option>
+
+        @for (
+          role of roleOptions;
+          track role.value
+        ) {
+          <mat-option [value]="role.value">
+            {{ role.label }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Estado</mat-label>
+
+      <mat-select
+        [value]="selectedStatus()"
+        (selectionChange)="
+          selectedStatus.set($event.value)
+        "
+      >
+        <mat-option value="all">
+          Todos
+        </mat-option>
+
+        <mat-option value="active">
+          Activos
+        </mat-option>
+
+        <mat-option value="inactive">
+          Inactivos
+        </mat-option>
+
+        <mat-option value="unconfigured">
+          Sin configurar
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="clearFilters()"
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Limpiar
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar usuarios"
+      [disabled]="
+        userManagementService.isLoading()
+      "
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (
+    userManagementService.isLoading()
+  ) {
+    <div class="state-container">
+      <mat-spinner diameter="44"></mat-spinner>
+
+      <span>
+        Consultando Auth, empleados y permisos...
+      </span>
+    </div>
+  } @else if (
+    userManagementService.errorMessage()
+  ) {
+    <div class="state-container">
+      <mat-icon>error_outline</mat-icon>
+
+      <h3>
+        No fue posible cargar los usuarios
+      </h3>
+
+      <p>
+        {{
+          userManagementService
+            .errorMessage()
+        }}
+      </p>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="reload()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Volver a intentar
+      </button>
+    </div>
+  } @else if (
+    filteredUsers().length === 0
+  ) {
+    <div class="state-container">
+      <mat-icon>manage_accounts</mat-icon>
+
+      <h3>
+        No se encontraron usuarios
+      </h3>
+
+      <p>
+        Ajusta la búsqueda o los filtros.
+      </p>
+    </div>
+  } @else {
+    <div class="results-count">
+      {{ filteredUsers().length }}
+      de
+      {{ totalUsers() }}
+      usuarios
+    </div>
+
+    <div class="table-container">
+      <table
+        mat-table
+        [dataSource]="filteredUsers()"
+      >
+        <ng-container matColumnDef="user">
+          <th mat-header-cell *matHeaderCellDef>
+            Usuario
+          </th>
+
+          <td mat-cell *matCellDef="let user">
+            <div class="user-cell">
+              <div class="avatar">
+                {{
+                  (
+                    user.employee?.full_name
+                    ?? user.email
+                  )
+                    .charAt(0)
+                    .toUpperCase()
+                }}
+              </div>
+
+              <div>
+                <strong>
+                  {{
+                    user.employee?.full_name
+                    ?? 'Sin empleado vinculado'
+                  }}
+                </strong>
+
+                <span>
+                  @if (user.employee) {
+                    No. reloj
+                    {{
+                      user.employee
+                        .employee_number
+                    }}
+                    ·
+                    {{
+                      user.employee.job_position
+                      ?? 'Sin puesto'
+                    }}
+                  } @else {
+                    Perfil pendiente
+                  }
+                </span>
+
+                @if (isCurrentUser(user)) {
+                  <small>
+                    Tu cuenta
+                  </small>
+                }
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>
+            Correo
+          </th>
+
+          <td mat-cell *matCellDef="let user">
+            <div class="email-cell">
+              <strong>
+                {{ user.email }}
+              </strong>
+
+              <span>
+                {{
+                  user.emailConfirmedAt
+                    ? 'Correo confirmado'
+                    : 'Correo no confirmado'
+                }}
+              </span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>
+            Rol
+          </th>
+
+          <td mat-cell *matCellDef="let user">
+            @if (user.profile) {
+              <span
+                class="role-badge"
+                [class.administrator]="
+                  user.profile.role
+                    === 'system_administrator'
+                "
+              >
+                {{
+                  roleLabel(
+                    user.profile.role
+                  )
+                }}
+              </span>
+            } @else {
+              <span class="pending-badge">
+                Sin configurar
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="plants">
+          <th mat-header-cell *matHeaderCellDef>
+            Plantas
+          </th>
+
+          <td mat-cell *matCellDef="let user">
+            @if (
+              user.profile?.role
+                === 'system_administrator'
+              && user.plants.length === 0
+            ) {
+              <span class="global-access">
+                <mat-icon>public</mat-icon>
+                Acceso global
+              </span>
+            } @else if (
+              user.plants.length > 0
+            ) {
+              <div class="plant-chips">
+                @for (
+                  plant of user.plants;
+                  track plant.id
+                ) {
+                  <mat-chip>
+                    {{ plant.code }}
+                  </mat-chip>
+                }
+              </div>
+            } @else {
+              <span class="without-value">
+                Sin plantas
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="lastSignIn">
+          <th mat-header-cell *matHeaderCellDef>
+            Último acceso
+          </th>
+
+          <td mat-cell *matCellDef="let user">
+            @if (user.lastSignInAt) {
+              <strong>
+                {{
+                  user.lastSignInAt
+                    | date:'dd/MM/yyyy HH:mm'
+                }}
+              </strong>
+            } @else {
+              <span class="without-value">
+                Nunca
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            Estado
+          </th>
+
+          <td mat-cell *matCellDef="let user">
+            @if (!user.profile) {
+              <span class="status-badge pending">
+                Pendiente
+              </span>
+            } @else {
+              <span
+                class="status-badge"
+                [class.active]="
+                  isUserActive(user)
+                "
+                [class.inactive]="
+                  !isUserActive(user)
+                "
+              >
+                {{
+                  isUserActive(user)
+                    ? 'Activo'
+                    : 'Inactivo'
+                }}
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let user"
+            class="actions-cell"
+          >
+            <button
+              mat-icon-button
+              type="button"
+              [matMenuTriggerFor]="actionsMenu"
+              [matMenuTriggerData]="{
+                user: user
+              }"
+              aria-label="Acciones del usuario"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="
+            displayedColumns
+          "
+        ></tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          "
+          [class.inactive-row]="
+            row.profile
+            && !isUserActive(row)
+          "
+        ></tr>
+      </table>
+    </div>
+  }
+</section>
+
+<mat-menu #actionsMenu="matMenu">
+  <ng-template
+    matMenuContent
+    let-user="user"
+  >
+    <button
+      mat-menu-item
+      type="button"
+      [disabled]="
+        !user.profile
+        || !user.employee
+      "
+      (click)="openEditDialog(user)"
+    >
+      <mat-icon>edit</mat-icon>
+      <span>Modificar</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="
+        openResetPasswordDialog(user)
+      "
+    >
+      <mat-icon>lock_reset</mat-icon>
+      <span>Restablecer contraseña</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      [disabled]="
+        !user.profile
+        || isCurrentUser(user)
+      "
+      (click)="toggleUserStatus(user)"
+    >
+      <mat-icon>
+        {{
+          isUserActive(user)
+            ? 'person_off'
+            : 'person'
+        }}
+      </mat-icon>
+
+      <span>
+        {{
+          isUserActive(user)
+            ? 'Desactivar'
+            : 'Activar'
+        }}
+      </span>
+    </button>
+  </ng-template>
+</mat-menu>

@@ -1,0 +1,372 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar usuario'
+      : 'Crear usuario'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="user-management-form"
+    class="user-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <section class="form-section">
+      <header>
+        <mat-icon>badge</mat-icon>
+
+        <div>
+          <strong>Empleado</strong>
+
+          <span>
+            Vincula la cuenta con un empleado
+            importado del HDC.
+          </span>
+        </div>
+      </header>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar empleado</mat-label>
+
+        <mat-icon matPrefix>
+          person_search
+        </mat-icon>
+
+        <input
+          matInput
+          type="text"
+          [formControl]="employeeSearchControl"
+          [matAutocomplete]="employeeAutocomplete"
+          [readonly]="isEditMode"
+          placeholder="Número de reloj o nombre"
+          autocomplete="off"
+          (input)="updateEmployeeSearch($event)"
+        />
+
+        <mat-autocomplete
+          #employeeAutocomplete="matAutocomplete"
+          [displayWith]="displayEmployee"
+          (optionSelected)="selectEmployee($event)"
+        >
+          @if (isSearchingEmployees()) {
+            <mat-option disabled>
+              Buscando empleados...
+            </mat-option>
+          } @else {
+            @for (
+              employee of
+                employeeSearchResults();
+              track employee.id
+            ) {
+              <mat-option [value]="employee.id">
+                <div class="employee-option">
+                  <strong>
+                    {{ employee.employee_number }}
+                    ·
+                    {{ employee.full_name }}
+                  </strong>
+
+                  <span>
+                    {{
+                      employee.job_position
+                      ?? 'Sin puesto'
+                    }}
+                    ·
+                    {{
+                      employee.department_name
+                      ?? 'Sin departamento'
+                    }}
+                  </span>
+                </div>
+              </mat-option>
+            }
+
+            @if (
+              employeeSearchMessage()
+            ) {
+              <mat-option disabled>
+                {{ employeeSearchMessage() }}
+              </mat-option>
+            }
+          }
+        </mat-autocomplete>
+
+        @if (
+          form.controls.employeeId.touched
+          && !form.controls.employeeId.value
+        ) {
+          <mat-error>
+            Selecciona un empleado válido
+            de la lista.
+          </mat-error>
+        }
+
+        <mat-hint>
+          Busca por número de reloj o nombre.
+          Se muestran hasta 50 coincidencias.
+        </mat-hint>
+      </mat-form-field>
+
+      @if (selectedEmployee(); as employee) {
+        <div class="selected-employee">
+          <mat-icon>verified</mat-icon>
+
+          <div>
+            <strong>
+              {{ employee.full_name }}
+            </strong>
+
+            <span>
+              No. reloj:
+              {{ employee.employee_number }}
+              ·
+              {{
+                employee.job_position
+                ?? 'Sin puesto'
+              }}
+            </span>
+          </div>
+        </div>
+      }
+    </section>
+
+    <section class="form-section">
+      <header>
+        <mat-icon>alternate_email</mat-icon>
+
+        <div>
+          <strong>Acceso</strong>
+
+          <span>
+            Correo y credenciales para iniciar
+            sesión.
+          </span>
+        </div>
+      </header>
+
+      <div class="two-columns">
+        <mat-form-field appearance="outline">
+          <mat-label>Correo electrónico</mat-label>
+
+          <mat-icon matPrefix>
+            email
+          </mat-icon>
+
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            autocomplete="off"
+            readonly
+          />
+
+          @if (
+            form.controls.email.touched
+            && form.controls.email.invalid
+          ) {
+            <mat-error>
+              Ingresa un correo electrónico válido.
+            </mat-error>
+          }
+        </mat-form-field>
+
+        @if (!isEditMode) {
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña temporal</mat-label>
+
+            <mat-icon matPrefix>
+              password
+            </mat-icon>
+
+            <input
+              matInput
+              type="password"
+              formControlName="password"
+              autocomplete="new-password"
+            />
+
+            @if (
+              form.controls.password.touched
+              && form.controls.password.invalid
+            ) {
+              <mat-error>
+                La contraseña debe tener al menos
+                8 caracteres.
+              </mat-error>
+            }
+          </mat-form-field>
+        }
+      </div>
+    </section>
+
+    <section class="form-section">
+      <header>
+        <mat-icon>admin_panel_settings</mat-icon>
+
+        <div>
+          <strong>Rol y plantas</strong>
+
+          <span>
+            Define los permisos y el alcance
+            operativo del usuario.
+          </span>
+        </div>
+      </header>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Rol de aplicación</mat-label>
+
+        <mat-select
+          formControlName="role"
+          (selectionChange)="
+            handleRoleChange($event.value)
+          "
+        >
+          @for (
+            role of roleOptions;
+            track role.value
+          ) {
+            <mat-option [value]="role.value">
+              {{ role.label }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="two-columns">
+        <mat-form-field appearance="outline">
+          <mat-label>Plantas permitidas</mat-label>
+
+          <mat-select
+            formControlName="plantIds"
+            multiple
+            (selectionChange)="
+              handlePlantAccessChange(
+                $event.value
+              )
+            "
+          >
+            @for (
+              plant of activePlants;
+              track plant.id
+            ) {
+              <mat-option [value]="plant.id">
+                {{ plant.code }} · {{ plant.name }}
+              </mat-option>
+            }
+          </mat-select>
+
+          @if (
+            form.controls.plantIds.hasError(
+              'requiredPlant'
+            )
+          ) {
+            <mat-error>
+              Selecciona al menos una planta.
+            </mat-error>
+          }
+
+          <mat-hint>
+            Para administradores puede permanecer
+            vacío.
+          </mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Planta predeterminada</mat-label>
+
+          <mat-select
+            formControlName="defaultPlantId"
+            (selectionChange)="
+              handleDefaultPlantChange(
+                $event.value
+              )
+            "
+          >
+            <mat-option value="">
+              Sin planta predeterminada
+            </mat-option>
+
+            @for (
+              plant of activePlants;
+              track plant.id
+            ) {
+              <mat-option [value]="plant.id">
+                {{ plant.code }} · {{ plant.name }}
+              </mat-option>
+            }
+          </mat-select>
+
+          @if (
+            form.controls.defaultPlantId
+              .hasError('requiredPlant')
+          ) {
+            <mat-error>
+              Selecciona una planta predeterminada.
+            </mat-error>
+          }
+
+          @if (
+            form.controls.defaultPlantId
+              .hasError(
+                'invalidDefaultPlant'
+              )
+          ) {
+            <mat-error>
+              La planta predeterminada debe estar
+              entre las permitidas.
+            </mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      @if (
+        form.controls.role.value
+        === 'system_administrator'
+      ) {
+        <div class="role-notice">
+          <mat-icon>info</mat-icon>
+
+          <span>
+            El administrador del sistema tiene
+            acceso global aunque no se seleccionen
+            plantas específicas.
+          </span>
+        </div>
+      }
+    </section>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="user-management-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'person_add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Crear usuario'
+    }}
+  </button>
+</mat-dialog-actions>

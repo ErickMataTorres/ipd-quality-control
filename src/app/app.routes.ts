@@ -324,18 +324,26 @@ export const routes: Routes = [
     ),
 },
       {
-        path: 'user-management',
-        title: 'Usuarios · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: administratorRoles,
-          pageTitle: 'Usuarios',
-          icon: 'manage_accounts',
-          description:
-            'Creación de usuarios, asignación de roles y control de accesos.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+  path: 'user-management',
+  title: 'Usuarios · IPD Quality',
+  canActivate: [roleGuard],
+
+  data: {
+    roles: administratorRoles,
+    pageTitle: 'Usuarios',
+    icon: 'manage_accounts',
+    description:
+      'Creación de usuarios, asignación de roles y control de accesos.',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/user-management/pages/user-management-list/user-management-list.component'
+    ).then(
+      component =>
+        component.UserManagementListComponent,
+    ),
+},
       {
         path: 'audit-log',
         title:
