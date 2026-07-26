@@ -1,0 +1,212 @@
+<h2 mat-dialog-title>
+  {{
+    isEditMode
+      ? 'Modificar tipo de defecto'
+      : 'Agregar tipo de defecto'
+  }}
+</h2>
+
+<mat-dialog-content>
+  <form
+    id="defect-type-form"
+    class="defect-type-form"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <div class="two-columns">
+      <mat-form-field appearance="outline">
+        <mat-label>Código</mat-label>
+
+        <mat-icon matPrefix>
+          tag
+        </mat-icon>
+
+        <input
+          matInput
+          formControlName="code"
+          placeholder="Ejemplo: MISSING_CLIP"
+          autocomplete="off"
+        />
+
+        <mat-hint>
+          Se guardará en mayúsculas y con guiones bajos.
+        </mat-hint>
+
+        @if (
+          form.controls.code.hasError(
+            'required'
+          )
+          && form.controls.code.touched
+        ) {
+          <mat-error>
+            El código es obligatorio.
+          </mat-error>
+        }
+
+        @if (
+          form.controls.code.hasError(
+            'pattern'
+          )
+          && form.controls.code.touched
+        ) {
+          <mat-error>
+            Usa letras, números, espacios o guiones bajos.
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Orden de visualización</mat-label>
+
+        <mat-icon matPrefix>
+          sort
+        </mat-icon>
+
+        <input
+          matInput
+          type="number"
+          min="0"
+          max="9999"
+          step="1"
+          formControlName="displayOrder"
+        />
+
+        @if (
+          (
+            form.controls.displayOrder
+              .hasError('min')
+            || form.controls.displayOrder
+              .hasError('max')
+            || form.controls.displayOrder
+              .hasError('invalidOrder')
+          )
+          && form.controls.displayOrder.touched
+        ) {
+          <mat-error>
+            Ingresa un número entero entre 0 y 9999.
+          </mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre en español</mat-label>
+
+      <mat-icon matPrefix>
+        translate
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="nameEs"
+        placeholder="Ejemplo: Clip faltante"
+        autocomplete="off"
+      />
+
+      @if (
+        form.controls.nameEs.hasError(
+          'required'
+        )
+        && form.controls.nameEs.touched
+      ) {
+        <mat-error>
+          El nombre en español es obligatorio.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre en inglés</mat-label>
+
+      <mat-icon matPrefix>
+        language
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="nameEn"
+        placeholder="Ejemplo: Missing Clip"
+        autocomplete="off"
+      />
+
+      @if (
+        form.controls.nameEn.hasError(
+          'required'
+        )
+        && form.controls.nameEn.touched
+      ) {
+        <mat-error>
+          El nombre en inglés es obligatorio.
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Categoría</mat-label>
+
+      <mat-icon matPrefix>
+        category
+      </mat-icon>
+
+      <input
+        matInput
+        formControlName="category"
+        placeholder="Ejemplo: Ensamble"
+        autocomplete="off"
+      />
+
+      <mat-hint>
+        Campo opcional para agrupar defectos.
+      </mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción</mat-label>
+
+      <textarea
+        matInput
+        formControlName="description"
+        rows="4"
+        placeholder="Descripción opcional del defecto"
+      ></textarea>
+
+      <mat-hint align="end">
+        {{
+          form.controls.description
+            .value.length
+        }}/500
+      </mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-button
+    type="button"
+    (click)="cancel()"
+  >
+    Cancelar
+  </button>
+
+  <button
+    mat-flat-button
+    type="submit"
+    form="defect-type-form"
+    [disabled]="form.invalid"
+  >
+    <mat-icon>
+      {{
+        isEditMode
+          ? 'save'
+          : 'add'
+      }}
+    </mat-icon>
+
+    {{
+      isEditMode
+        ? 'Guardar cambios'
+        : 'Agregar defecto'
+    }}
+  </button>
+</mat-dialog-actions>

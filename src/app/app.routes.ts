@@ -299,20 +299,30 @@ export const routes: Routes = [
         component.ShiftsListComponent,
     ),
 },
-      {
-        path: 'defect-types',
-        title:
-          'Tipos de defecto · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: managementRoles,
-          pageTitle: 'Tipos de defecto',
-          icon: 'rule',
-          description:
-            'Administración del catálogo de defectos utilizado en las capturas.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'defect-types',
+  title: 'Tipos de defecto · IPD Quality',
+
+  canActivate: [
+    roleGuard,
+  ],
+
+  data: {
+    roles: managementRoles,
+    pageTitle: 'Tipos de defecto',
+    icon: 'rule',
+    description:
+      'Administración del catálogo de defectos utilizado en las capturas.',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/defect-types/pages/defect-types-list/defect-types-list.component'
+    ).then(
+      component =>
+        component.DefectTypesListComponent,
+    ),
+},
       {
         path: 'user-management',
         title: 'Usuarios · IPD Quality',

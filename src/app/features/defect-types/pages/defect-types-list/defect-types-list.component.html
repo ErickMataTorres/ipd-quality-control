@@ -1,0 +1,473 @@
+<section class="page-header">
+  <div>
+    <span>Catálogo de calidad</span>
+
+    <h2>Tipos de defecto</h2>
+
+    <p>
+      Administra los defectos disponibles
+      en las capturas diarias, análisis,
+      dashboards y reportes.
+    </p>
+  </div>
+
+  @if (canManage()) {
+    <button
+      mat-flat-button
+      type="button"
+      [disabled]="isSaving()"
+      (click)="openCreateDialog()"
+    >
+      <mat-icon>add</mat-icon>
+      Agregar defecto
+    </button>
+  }
+</section>
+
+<section class="summary-grid">
+  <article class="summary-card">
+    <div class="summary-icon primary">
+      <mat-icon>rule</mat-icon>
+    </div>
+
+    <div>
+      <span>Total</span>
+
+      <strong>
+        {{ totalDefectTypes() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon success">
+      <mat-icon>check_circle</mat-icon>
+    </div>
+
+    <div>
+      <span>Activos</span>
+
+      <strong>
+        {{ activeDefectTypes() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon muted">
+      <mat-icon>pause_circle</mat-icon>
+    </div>
+
+    <div>
+      <span>Inactivos</span>
+
+      <strong>
+        {{ inactiveDefectTypes() }}
+      </strong>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon info">
+      <mat-icon>category</mat-icon>
+    </div>
+
+    <div>
+      <span>Categorías</span>
+
+      <strong>
+        {{ categoryCount() }}
+      </strong>
+    </div>
+  </article>
+</section>
+
+<section class="notice-card">
+  <mat-icon>info</mat-icon>
+
+  <div>
+    <strong>
+      Los tipos de defecto no se eliminan.
+    </strong>
+
+    <span>
+      Cuando dejen de utilizarse, se desactivan
+      para conservar la trazabilidad de los
+      registros históricos.
+    </span>
+  </div>
+</section>
+
+<section class="table-card">
+  <header class="table-toolbar">
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+      class="search-field"
+    >
+      <mat-label>Buscar defecto</mat-label>
+
+      <mat-icon matPrefix>
+        search
+      </mat-icon>
+
+      <input
+        matInput
+        [value]="searchTerm()"
+        placeholder="Código, nombre, categoría o descripción"
+        (input)="updateSearch($event)"
+      />
+
+      @if (searchTerm()) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          aria-label="Limpiar búsqueda"
+          (click)="clearSearch()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Categoría</mat-label>
+
+      <mat-select
+        [value]="selectedCategory()"
+        (selectionChange)="
+          selectedCategory.set(
+            $event.value
+          )
+        "
+      >
+        <mat-option value="all">
+          Todas
+        </mat-option>
+
+        @for (
+          category of categories();
+          track category
+        ) {
+          <mat-option [value]="category">
+            {{ category }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field
+      appearance="outline"
+      subscriptSizing="dynamic"
+    >
+      <mat-label>Estado</mat-label>
+
+      <mat-select
+        [value]="selectedStatus()"
+        (selectionChange)="
+          selectedStatus.set(
+            $event.value
+          )
+        "
+      >
+        <mat-option value="all">
+          Todos
+        </mat-option>
+
+        <mat-option value="active">
+          Activos
+        </mat-option>
+
+        <mat-option value="inactive">
+          Inactivos
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="clearFilters()"
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Limpiar
+    </button>
+
+    <button
+      mat-icon-button
+      type="button"
+      matTooltip="Actualizar listado"
+      [disabled]="
+        defectTypesService.isLoading()
+      "
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </header>
+
+  @if (
+    defectTypesService.isLoading()
+  ) {
+    <div class="state-container">
+      <mat-spinner diameter="42"></mat-spinner>
+
+      <span>
+        Cargando tipos de defecto...
+      </span>
+    </div>
+  } @else if (
+    defectTypesService.errorMessage()
+  ) {
+    <div class="state-container">
+      <mat-icon>error_outline</mat-icon>
+
+      <h3>
+        No fue posible cargar los defectos
+      </h3>
+
+      <p>
+        {{
+          defectTypesService.errorMessage()
+        }}
+      </p>
+
+      <button
+        mat-flat-button
+        type="button"
+        (click)="reload()"
+      >
+        <mat-icon>refresh</mat-icon>
+        Volver a intentar
+      </button>
+    </div>
+  } @else if (
+    filteredDefectTypes().length === 0
+  ) {
+    <div class="state-container">
+      <mat-icon>rule</mat-icon>
+
+      <h3>
+        No se encontraron resultados
+      </h3>
+
+      <p>
+        Ajusta la búsqueda o los filtros
+        seleccionados.
+      </p>
+    </div>
+  } @else {
+    <div class="results-count">
+      {{
+        filteredDefectTypes().length
+      }}
+      de
+      {{ totalDefectTypes() }}
+      tipos de defecto
+    </div>
+
+    <div class="table-container">
+      <table
+        mat-table
+        [dataSource]="
+          filteredDefectTypes()
+        "
+      >
+        <ng-container matColumnDef="order">
+          <th mat-header-cell *matHeaderCellDef>
+            Orden
+          </th>
+
+          <td mat-cell *matCellDef="let defectType">
+            <span class="order-badge">
+              {{ defectType.display_order }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="code">
+          <th mat-header-cell *matHeaderCellDef>
+            Código
+          </th>
+
+          <td mat-cell *matCellDef="let defectType">
+            <code>
+              {{ defectType.code }}
+            </code>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>
+            Nombre
+          </th>
+
+          <td mat-cell *matCellDef="let defectType">
+            <div class="defect-name">
+              <strong>
+                {{ defectType.name_es }}
+              </strong>
+
+              <span>
+                {{ defectType.name_en }}
+              </span>
+
+              @if (defectType.description) {
+                <small>
+                  {{ defectType.description }}
+                </small>
+              }
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="category">
+          <th mat-header-cell *matHeaderCellDef>
+            Categoría
+          </th>
+
+          <td mat-cell *matCellDef="let defectType">
+            @if (defectType.category) {
+              <span class="category-badge">
+                {{ defectType.category }}
+              </span>
+            } @else {
+              <span class="without-category">
+                Sin categoría
+              </span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            Estado
+          </th>
+
+          <td mat-cell *matCellDef="let defectType">
+            <mat-chip
+              [class.active-chip]="
+                defectType.active
+              "
+              [class.inactive-chip]="
+                !defectType.active
+              "
+            >
+              {{
+                defectType.active
+                  ? 'Activo'
+                  : 'Inactivo'
+              }}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="updatedAt">
+          <th mat-header-cell *matHeaderCellDef>
+            Última actualización
+          </th>
+
+          <td mat-cell *matCellDef="let defectType">
+            {{
+              defectType.updated_at
+                | date:'dd/MM/yyyy HH:mm'
+            }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+          </th>
+
+          <td
+            mat-cell
+            *matCellDef="let defectType"
+            class="actions-cell"
+          >
+            @if (canManage()) {
+              <button
+                mat-icon-button
+                type="button"
+                [matMenuTriggerFor]="
+                  actionsMenu
+                "
+                [matMenuTriggerData]="{
+                  defectType: defectType
+                }"
+                aria-label="Acciones del defecto"
+              >
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="
+            displayedColumns
+          "
+        ></tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          "
+          [class.inactive-row]="
+            !row.active
+          "
+        ></tr>
+      </table>
+    </div>
+  }
+</section>
+
+<mat-menu #actionsMenu="matMenu">
+  <ng-template
+    matMenuContent
+    let-defectType="defectType"
+  >
+    <button
+      mat-menu-item
+      type="button"
+      (click)="
+        openEditDialog(defectType)
+      "
+    >
+      <mat-icon>edit</mat-icon>
+      <span>Modificar</span>
+    </button>
+
+    <button
+      mat-menu-item
+      type="button"
+      (click)="
+        toggleDefectTypeStatus(
+          defectType
+        )
+      "
+    >
+      <mat-icon>
+        {{
+          defectType.active
+            ? 'pause_circle'
+            : 'play_circle'
+        }}
+      </mat-icon>
+
+      <span>
+        {{
+          defectType.active
+            ? 'Desactivar'
+            : 'Activar'
+        }}
+      </span>
+    </button>
+  </ng-template>
+</mat-menu>
