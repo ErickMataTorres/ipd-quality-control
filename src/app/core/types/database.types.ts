@@ -1601,6 +1601,17 @@ export type Database = {
       }
     }
     Functions: {
+      configure_application_user: {
+        Args: {
+          active_value: boolean
+          default_plant_id_value: string
+          employee_id_value: string
+          plant_ids_value: string[]
+          role_value: Database["public"]["Enums"]["app_role"]
+          user_id_value: string
+        }
+        Returns: undefined
+      }
       create_supervisor_assignments: {
         Args: {
           effective_from_value: string
