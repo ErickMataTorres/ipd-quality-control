@@ -1622,6 +1622,75 @@ export type Database = {
         }
         Returns: number
       }
+      get_audit_log_actor_options: {
+        Args: never
+        Returns: {
+          actor_email: string
+          actor_name: string
+          actor_role: Database["public"]["Enums"]["app_role"]
+          changed_by: string
+          employee_number: string
+          entry_count: number
+          last_change_at: string
+        }[]
+      }
+      get_audit_log_entries: {
+        Args: {
+          actions_value?: Database["public"]["Enums"]["audit_action"][]
+          changed_by_value?: string
+          date_from_value: string
+          date_to_value: string
+          result_limit_value?: number
+          result_offset_value?: number
+          search_value?: string
+          table_names_value?: string[]
+        }
+        Returns: {
+          action: Database["public"]["Enums"]["audit_action"]
+          actor_email: string
+          actor_employee_number: string
+          actor_name: string
+          actor_role: Database["public"]["Enums"]["app_role"]
+          audit_log_id: string
+          changed_at: string
+          changed_by: string
+          changed_fields: string[]
+          new_values: Json
+          old_values: Json
+          record_id: string
+          record_label: string
+          table_name: string
+          total_filtered: number
+        }[]
+      }
+      get_audit_log_summary: {
+        Args: {
+          actions_value?: Database["public"]["Enums"]["audit_action"][]
+          changed_by_value?: string
+          date_from_value: string
+          date_to_value: string
+          search_value?: string
+          table_names_value?: string[]
+        }
+        Returns: {
+          delete_entries: number
+          distinct_actors: number
+          distinct_tables: number
+          first_change_at: string
+          insert_entries: number
+          last_change_at: string
+          total_entries: number
+          update_entries: number
+        }[]
+      }
+      get_audit_log_table_options: {
+        Args: never
+        Returns: {
+          entry_count: number
+          last_change_at: string
+          table_name: string
+        }[]
+      }
       get_daily_operation_board: {
         Args: {
           plant_id_value: string

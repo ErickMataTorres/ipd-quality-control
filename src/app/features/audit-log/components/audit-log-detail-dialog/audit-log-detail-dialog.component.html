@@ -1,0 +1,160 @@
+<header class="dialog-header">
+  <div
+    class="action-icon"
+    [class]="
+      'action-icon ' + entry.action
+    "
+  >
+    <mat-icon>
+      {{ actionIcon() }}
+    </mat-icon>
+  </div>
+
+  <div>
+    <span>
+      {{ actionLabel() }}
+    </span>
+
+    <h2 mat-dialog-title>
+      Detalle del movimiento
+    </h2>
+  </div>
+</header>
+
+<mat-dialog-content>
+  <section class="movement-summary">
+    <article>
+      <span>Módulo</span>
+
+      <strong>
+        {{ tableLabel() }}
+      </strong>
+    </article>
+
+    <article>
+      <span>Registro</span>
+
+      <strong>
+        {{
+          entry.recordLabel
+          || entry.recordId
+          || 'Sin identificador'
+        }}
+      </strong>
+    </article>
+
+    <article>
+      <span>Realizado por</span>
+
+      <strong>
+        {{ actorLabel() }}
+      </strong>
+
+      @if (entry.actorEmployeeNumber) {
+        <small>
+          No. reloj
+          {{ entry.actorEmployeeNumber }}
+        </small>
+      }
+    </article>
+
+    <article>
+      <span>Fecha y hora</span>
+
+      <strong>
+        {{
+          entry.changedAt
+            | date:'dd/MM/yyyy HH:mm:ss'
+        }}
+      </strong>
+    </article>
+  </section>
+
+  <section class="changes-section">
+    <header>
+      <mat-icon>difference</mat-icon>
+
+      <div>
+        <h3>Campos modificados</h3>
+
+        <p>
+          Comparación entre el valor anterior
+          y el valor guardado.
+        </p>
+      </div>
+    </header>
+
+    @if (fieldRows.length > 0) {
+      <div class="changes-table">
+        <div class="changes-header">
+          <span>Campo</span>
+          <span>Valor anterior</span>
+          <span>Valor nuevo</span>
+        </div>
+
+        @for (
+          row of fieldRows;
+          track row.field
+        ) {
+          <div class="change-row">
+            <strong>
+              {{ row.label }}
+            </strong>
+
+            <pre>{{
+              formatValue(
+                row.previousValue
+              )
+            }}</pre>
+
+            <pre>{{
+              formatValue(
+                row.newValue
+              )
+            }}</pre>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-changes">
+        <mat-icon>info</mat-icon>
+
+        <span>
+          El movimiento no contiene campos
+          comparables.
+        </span>
+      </div>
+    }
+  </section>
+
+  <details class="raw-section">
+    <summary>
+      <mat-icon>data_object</mat-icon>
+      Ver datos completos
+    </summary>
+
+    <div class="raw-grid">
+      <article>
+        <h4>Valores anteriores</h4>
+
+        <pre>{{ rawJson(entry.oldValues) }}</pre>
+      </article>
+
+      <article>
+        <h4>Valores nuevos</h4>
+
+        <pre>{{ rawJson(entry.newValues) }}</pre>
+      </article>
+    </div>
+  </details>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button
+    mat-flat-button
+    type="button"
+    mat-dialog-close
+  >
+    Cerrar
+  </button>
+</mat-dialog-actions>

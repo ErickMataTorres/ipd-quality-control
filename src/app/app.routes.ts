@@ -344,20 +344,28 @@ export const routes: Routes = [
         component.UserManagementListComponent,
     ),
 },
-      {
-        path: 'audit-log',
-        title:
-          'Historial de cambios · IPD Quality',
-        canActivate: [roleGuard],
-        data: {
-          roles: administratorRoles,
-          pageTitle: 'Historial de cambios',
-          icon: 'history',
-          description:
-            'Consulta de altas, modificaciones y movimientos realizados en el sistema.',
-        },
-        loadComponent: loadPlaceholder,
-      },
+{
+  path: 'audit-log',
+  title:
+    'Historial de cambios · IPD Quality',
+  canActivate: [roleGuard],
+
+  data: {
+    roles: administratorRoles,
+    pageTitle: 'Historial de cambios',
+    icon: 'history',
+    description:
+      'Consulta de altas, modificaciones y movimientos realizados en el sistema.',
+  },
+
+  loadComponent: () =>
+    import(
+      './features/audit-log/pages/audit-log-list/audit-log-list.component'
+    ).then(
+      component =>
+        component.AuditLogListComponent,
+    ),
+},
       {
         path: '',
         pathMatch: 'full',

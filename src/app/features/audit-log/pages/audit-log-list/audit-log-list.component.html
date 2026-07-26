@@ -1,0 +1,554 @@
+<section class="page-header">
+  <div>
+    <span>Auditoría del sistema</span>
+
+    <h2>Historial de cambios</h2>
+
+    <p>
+      Consulta altas, modificaciones y
+      eliminaciones realizadas dentro de
+      la aplicación.
+    </p>
+  </div>
+
+  <button
+    mat-stroked-button
+    type="button"
+    [disabled]="
+      auditLogService.isLoading()
+    "
+    (click)="reload()"
+  >
+    <mat-icon>refresh</mat-icon>
+    Actualizar
+  </button>
+</section>
+
+<section class="filters-card">
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Periodo</mat-label>
+
+    <mat-icon matPrefix>
+      date_range
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedPreset()"
+      (selectionChange)="
+        applyPreset($event.value)
+      "
+    >
+      <mat-option value="today">
+        Hoy
+      </mat-option>
+
+      <mat-option value="last_7">
+        Últimos 7 días
+      </mat-option>
+
+      <mat-option value="last_30">
+        Últimos 30 días
+      </mat-option>
+
+      <mat-option value="last_90">
+        Últimos 90 días
+      </mat-option>
+
+      <mat-option value="custom">
+        Personalizado
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Desde</mat-label>
+
+    <input
+      matInput
+      type="date"
+      [value]="dateFrom()"
+      (change)="
+        handleDateChange(
+          'from',
+          $event
+        )
+      "
+    />
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Hasta</mat-label>
+
+    <input
+      matInput
+      type="date"
+      [value]="dateTo()"
+      (change)="
+        handleDateChange(
+          'to',
+          $event
+        )
+      "
+    />
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Módulos</mat-label>
+
+    <mat-icon matPrefix>
+      table_view
+    </mat-icon>
+
+    <mat-select
+      multiple
+      [value]="selectedTables()"
+      (selectionChange)="
+        selectedTables.set(
+          $event.value
+        );
+        handleFilterChange()
+      "
+    >
+      @for (
+        table of
+          auditLogService.tableOptions();
+        track table.tableName
+      ) {
+        <mat-option
+          [value]="table.tableName"
+        >
+          {{ tableLabel(table.tableName) }}
+          · {{ table.entryCount }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Acciones</mat-label>
+
+    <mat-icon matPrefix>
+      rule
+    </mat-icon>
+
+    <mat-select
+      multiple
+      [value]="selectedActions()"
+      (selectionChange)="
+        selectedActions.set(
+          $event.value
+        );
+        handleFilterChange()
+      "
+    >
+      @for (
+        action of actionOptions;
+        track action.value
+      ) {
+        <mat-option
+          [value]="action.value"
+        >
+          {{ action.label }}
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+  >
+    <mat-label>Realizado por</mat-label>
+
+    <mat-icon matPrefix>
+      person
+    </mat-icon>
+
+    <mat-select
+      [value]="selectedActorId()"
+      (selectionChange)="
+        selectedActorId.set(
+          $event.value
+        );
+        handleFilterChange()
+      "
+    >
+      <mat-option value="all">
+        Todos los usuarios
+      </mat-option>
+
+      @for (
+        actor of
+          auditLogService.actorOptions();
+        track actor.changedBy
+      ) {
+        <mat-option
+          [value]="actor.changedBy"
+        >
+          {{ actorDisplayName(actor) }}
+
+          @if (actor.employeeNumber) {
+            · {{ actor.employeeNumber }}
+          }
+        </mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field
+    appearance="outline"
+    subscriptSizing="dynamic"
+    class="search-field"
+  >
+    <mat-label>Buscar en el historial</mat-label>
+
+    <mat-icon matPrefix>
+      search
+    </mat-icon>
+
+    <input
+      matInput
+      [value]="searchTerm()"
+      placeholder="Nombre, reloj, tabla, registro o valor"
+      (input)="updateSearch($event)"
+    />
+
+    @if (searchTerm()) {
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Limpiar búsqueda"
+        (click)="clearSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  <button
+    mat-stroked-button
+    type="button"
+    [disabled]="!hasActiveFilters()"
+    (click)="clearFilters()"
+  >
+    <mat-icon>filter_alt_off</mat-icon>
+    Limpiar
+  </button>
+</section>
+
+@if (
+  auditLogService.optionsErrorMessage()
+) {
+  <section class="options-warning">
+    <mat-icon>warning_amber</mat-icon>
+
+    <span>
+      {{
+        auditLogService
+          .optionsErrorMessage()
+      }}
+    </span>
+  </section>
+}
+
+@if (
+  auditLogService.isLoading()
+) {
+  <section class="state-container">
+    <mat-spinner diameter="46"></mat-spinner>
+
+    <span>
+      Consultando movimientos...
+    </span>
+  </section>
+} @else if (
+  auditLogService.errorMessage()
+) {
+  <section class="state-container">
+    <mat-icon>error_outline</mat-icon>
+
+    <h3>
+      No fue posible consultar el historial
+    </h3>
+
+    <p>
+      {{ auditLogService.errorMessage() }}
+    </p>
+
+    <button
+      mat-flat-button
+      type="button"
+      (click)="reload()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Volver a intentar
+    </button>
+  </section>
+} @else if (
+  auditLogService.summary();
+  as summary
+) {
+  <section class="summary-grid">
+    <article>
+      <div class="summary-icon primary">
+        <mat-icon>history</mat-icon>
+      </div>
+
+      <div>
+        <span>Movimientos</span>
+
+        <strong>
+          {{ summary.totalEntries }}
+        </strong>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon success">
+        <mat-icon>add_circle</mat-icon>
+      </div>
+
+      <div>
+        <span>Altas</span>
+
+        <strong>
+          {{ summary.insertEntries }}
+        </strong>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon info">
+        <mat-icon>edit</mat-icon>
+      </div>
+
+      <div>
+        <span>Modificaciones</span>
+
+        <strong>
+          {{ summary.updateEntries }}
+        </strong>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon danger">
+        <mat-icon>delete</mat-icon>
+      </div>
+
+      <div>
+        <span>Eliminaciones</span>
+
+        <strong>
+          {{ summary.deleteEntries }}
+        </strong>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon warning">
+        <mat-icon>table_view</mat-icon>
+      </div>
+
+      <div>
+        <span>Módulos afectados</span>
+
+        <strong>
+          {{ summary.distinctTables }}
+        </strong>
+      </div>
+    </article>
+
+    <article>
+      <div class="summary-icon neutral">
+        <mat-icon>group</mat-icon>
+      </div>
+
+      <div>
+        <span>Usuarios</span>
+
+        <strong>
+          {{ summary.distinctActors }}
+        </strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="audit-card">
+    <header>
+      <div>
+        <span>Resultados</span>
+
+        <h3>
+          Movimientos registrados
+        </h3>
+      </div>
+
+      <div class="result-meta">
+        <strong>
+          {{ resultRange() }}
+        </strong>
+
+        @if (
+          auditLogService.lastLoadedAt();
+          as loadedAt
+        ) {
+          <span>
+            Actualizado
+            {{
+              loadedAt
+                | date:'HH:mm:ss'
+            }}
+          </span>
+        }
+      </div>
+    </header>
+
+    @if (
+      auditLogService.entries().length
+        > 0
+    ) {
+      <div class="audit-list">
+        @for (
+          entry of
+            auditLogService.entries();
+          track entry.auditLogId
+        ) {
+          <article
+            class="audit-entry"
+            tabindex="0"
+            role="button"
+            (click)="openDetail(entry)"
+            (keydown.enter)="openDetail(entry)"
+          >
+            <div
+              class="entry-icon"
+              [class]="
+                'entry-icon '
+                + entry.action
+              "
+            >
+              <mat-icon>
+                {{ actionIcon(entry.action) }}
+              </mat-icon>
+            </div>
+
+            <div class="entry-main">
+              <div class="entry-heading">
+                <span
+                  class="action-badge"
+                  [class]="
+                    'action-badge '
+                    + entry.action
+                  "
+                >
+                  {{ actionLabel(entry.action) }}
+                </span>
+
+                <strong>
+                  {{ tableLabel(entry.tableName) }}
+                </strong>
+              </div>
+
+              <h4>
+                {{
+                  entry.recordLabel
+                  || entry.recordId
+                  || 'Registro sin identificador'
+                }}
+              </h4>
+
+              <p>
+                {{ changedFieldsLabel(entry) }}
+              </p>
+            </div>
+
+            <div class="entry-actor">
+              <mat-icon>person</mat-icon>
+
+              <div>
+                <strong>
+                  {{ entryActorName(entry) }}
+                </strong>
+
+                <span>
+                  {{ entryActorDetail(entry) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="entry-date">
+              <strong>
+                {{
+                  entry.changedAt
+                    | date:'dd/MM/yyyy'
+                }}
+              </strong>
+
+              <span>
+                {{
+                  entry.changedAt
+                    | date:'HH:mm:ss'
+                }}
+              </span>
+            </div>
+
+            <button
+              mat-icon-button
+              type="button"
+              matTooltip="Ver valores anteriores y nuevos"
+              (click)="
+                $event.stopPropagation();
+                openDetail(entry)
+              "
+            >
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </article>
+        }
+      </div>
+
+      <mat-paginator
+        [length]="
+          auditLogService.totalFiltered()
+        "
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        [showFirstLastButtons]="true"
+        aria-label="Paginación del historial"
+        (page)="handlePage($event)"
+      ></mat-paginator>
+    } @else {
+      <div class="empty-state">
+        <mat-icon>manage_search</mat-icon>
+
+        <h3>
+          Sin movimientos para mostrar
+        </h3>
+
+        <p>
+          No existen registros que coincidan
+          con el periodo y los filtros
+          seleccionados.
+        </p>
+      </div>
+    }
+  </section>
+}
