@@ -180,6 +180,49 @@ export class DailyIpdRecordDialogComponent
     );
   }
 
+  get defectiveHarnessQuantity(): number {
+  return Number(
+    this.form.controls
+      .defectiveHarnessQuantity.value
+    || 0,
+  );
+}
+
+get defectConsistencyMessage():
+  string | null {
+  const defectiveHarnessQuantity =
+    this.defectiveHarnessQuantity;
+
+  if (
+    defectiveHarnessQuantity === 0
+    && this.totalDefects > 0
+  ) {
+    return (
+      'Registraste defectos, pero la cantidad '
+      + 'de arneses defectuosos es cero.'
+    );
+  }
+
+  if (
+    this.totalDefects
+    < defectiveHarnessQuantity
+  ) {
+    return (
+      'El total de defectos no puede ser menor '
+      + 'que la cantidad de arneses defectuosos. '
+      + 'Cada arnés defectuoso debe tener al '
+      + 'menos un defecto registrado.'
+    );
+  }
+
+  return null;
+}
+
+get hasDefectConsistencyIssue(): boolean {
+  return this.defectConsistencyMessage
+    !== null;
+}
+
   get previewIpd(): number | null {
     const producedQuantity =
       Number(
@@ -208,10 +251,14 @@ export class DailyIpdRecordDialogComponent
       : this.data.item.targetPercentage;
   }
 
-  get previewIsWithinTarget():
-    boolean | null {
-    const ipd = this.previewIpd;
-    const target = this.effectiveTarget;
+get previewIsWithinTarget():
+  boolean | null {
+  if (this.hasDefectConsistencyIssue) {
+    return null;
+  }
+
+  const ipd = this.previewIpd;
+  const target = this.effectiveTarget;
 
     if (
       ipd === null
@@ -276,21 +323,32 @@ export class DailyIpdRecordDialogComponent
     await this.save('draft');
   }
 
-  async submitRecord(): Promise<void> {
-    const producedQuantity =
-      this.form.controls
-        .producedQuantity.value;
+async submitRecord(): Promise<void> {
+  const producedQuantity =
+    this.form.controls
+      .producedQuantity.value;
 
-    if (producedQuantity <= 0) {
-      this.errorMessage.set(
-        'Para enviar el registro, la producción debe ser mayor que cero.',
-      );
+  if (producedQuantity <= 0) {
+    this.errorMessage.set(
+      'Para enviar el registro, la producción debe ser mayor que cero.',
+    );
 
-      return;
-    }
-
-    await this.save('submitted');
+    return;
   }
+
+  const consistencyMessage =
+    this.defectConsistencyMessage;
+
+  if (consistencyMessage) {
+    this.errorMessage.set(
+      consistencyMessage,
+    );
+
+    return;
+  }
+
+  await this.save('submitted');
+}
 
   async saveNoProduction(): Promise<void> {
     this.form.controls
@@ -554,6 +612,36 @@ export class DailyIpdRecordDialogComponent
     if (databaseError.code === '42501') {
       return 'No tienes permisos para guardar este registro o el supervisor no está asignado a la línea.';
     }
+
+    if (databaseError.code === 'P2001') {
+  return (
+    'El total de defectos no puede ser menor '
+    + 'que la cantidad de arneses defectuosos. '
+    + 'Cada arnés defectuoso debe tener al '
+    + 'menos un defecto registrado.'
+  );
+}
+
+if (databaseError.code === 'P2002') {
+  return (
+    'Registraste defectos, pero la cantidad '
+    + 'de arneses defectuosos es cero.'
+  );
+}
+
+if (databaseError.code === 'P2000') {
+  return (
+    'Para enviar el registro, la producción '
+    + 'debe ser mayor que cero.'
+  );
+}
+
+if (databaseError.code === 'P2003') {
+  return (
+    'Los arneses defectuosos no pueden superar '
+    + 'a los arneses producidos.'
+  );
+}
 
     if (databaseError.code === '22023') {
       return 'Revisa las cantidades, fechas y tipos de defecto capturados.';

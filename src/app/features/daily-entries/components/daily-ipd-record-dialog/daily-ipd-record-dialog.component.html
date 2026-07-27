@@ -209,6 +209,26 @@
         </article>
       </section>
 
+      @if (
+  defectConsistencyMessage;
+  as consistencyMessage
+) {
+  <div class="warning-note">
+    <mat-icon>warning</mat-icon>
+
+    <span>
+      <strong>
+        Registro inconsistente.
+      </strong>
+
+      {{ consistencyMessage }}
+
+      Puedes guardarlo como borrador,
+      pero debes corregirlo antes de enviarlo.
+    </span>
+  </div>
+}
+
       <section class="defects-section">
         <header>
           <div>
@@ -393,16 +413,17 @@
     Guardar borrador
   </button>
 
-  <button
-    mat-flat-button
-    type="button"
-    [disabled]="
-      isSaving()
-      || isLoading()
-      || form.invalid
-    "
-    (click)="submitRecord()"
-  >
+<button
+  mat-flat-button
+  type="button"
+  [disabled]="
+    isSaving()
+    || isLoading()
+    || form.invalid
+    || hasDefectConsistencyIssue
+  "
+  (click)="submitRecord()"
+>
     @if (isSaving()) {
       <mat-spinner
         diameter="18"
