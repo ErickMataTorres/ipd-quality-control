@@ -672,32 +672,36 @@ export class ReportsComponent
   }
 
   printReport(): void {
-    const summary =
-      this.reportsService.summary();
+const summary =
+  this.reportsService.summary();
 
-    if (!summary) {
-      this.showNoExportData();
-      return;
-    }
+if (
+  !summary
+  || summary.totalRecords === 0
+) {
+  this.showNoExportData();
+  return;
+}
 
-    const reportWindow =
-      window.open(
-        '',
-        '_blank',
-        'noopener,noreferrer',
-      );
+const reportWindow =
+  window.open(
+    '',
+    '_blank',
+  );
 
-    if (!reportWindow) {
-      this.snackBar.open(
-        'El navegador bloqueó la ventana de impresión.',
-        'Cerrar',
-        {
-          duration: 5000,
-        },
-      );
+if (!reportWindow) {
+  this.snackBar.open(
+    'El navegador bloqueó la ventana de impresión.',
+    'Cerrar',
+    {
+      duration: 5000,
+    },
+  );
 
-      return;
-    }
+  return;
+}
+
+reportWindow.opener = null;
 
     const lineRows =
       this.reportsService
@@ -963,18 +967,18 @@ export class ReportsComponent
       </html>
     `);
 
-    reportWindow.document.close();
+reportWindow.document.close();
 
-    reportWindow.addEventListener(
-      'load',
-      () => {
-        reportWindow.focus();
-        reportWindow.print();
-      },
-      {
-        once: true,
-      },
-    );
+reportWindow.focus();
+
+window.setTimeout(
+  () => {
+    if (!reportWindow.closed) {
+      reportWindow.print();
+    }
+  },
+  300,
+);
   }
 
   dailyBarHeight(
