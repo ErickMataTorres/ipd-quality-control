@@ -83,11 +83,17 @@ export class ProductModelsListComponent
   readonly searchTerm = signal('');
   readonly isSaving = signal(false);
 
-  readonly canManage = computed(
-    () =>
-      this.userProfileService.role()
-      === 'system_administrator',
-  );
+readonly canManage = computed(
+  () => {
+    const role =
+      this.userProfileService.role();
+
+    return (
+      role === 'system_administrator'
+      || role === 'quality_manager'
+    );
+  },
+);
 
   readonly displayedColumns = [
     'name',
